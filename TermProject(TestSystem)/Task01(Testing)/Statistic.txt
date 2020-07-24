@@ -1,0 +1,8 @@
+NoFullName NoAddress NoNumber
+0 0 1
+NoFullName NoAddress NoNumber
+1 100 1
+NoFullName NoAddress NoNumber
+1 100 Category1
+Koval 123str 12
+1 100 Category1

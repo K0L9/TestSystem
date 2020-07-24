@@ -6,6 +6,275 @@
 
 using namespace std;
 
+struct QuestAnsw
+{
+	string question;
+	string answers[4];
+	int indexCorrect;
+
+	QuestAnsw(string quest, string* answers, int correct)
+		:question(quest), indexCorrect(correct)
+	{
+		for (size_t i = 0; i < 4; i++)
+			this->answers[i] = answers[i];
+	}
+
+	string GetTrueAnswer()const
+	{
+		return answers[indexCorrect];
+	}
+
+	void ShowQuestAnsw()const
+	{
+		cout << question << ":\n";
+
+		char tmp = 'A';
+
+		for (int i = 0; i < 4; i++)
+			cout << "   " << tmp++ << ". " << answers[i] << endl;
+	}
+
+	bool CheckAnsw(char answer) const
+	{
+		return answer - 49 == indexCorrect;
+	}
+
+	friend class Admin;
+	friend class User;
+	friend class Shows;
+	friend class Founders;
+};
+
+class Category
+{
+private:
+	string catName;
+	vector<QuestAnsw> QA;
+
+	friend class Test;
+
+public:
+	Category()
+	{
+
+	}
+
+	Category(string catName)
+		:catName(catName)
+	{
+
+	}
+
+	string GetName() const
+	{
+		return catName;
+	}
+
+	friend class Admin;
+	friend class User;
+	friend class Shows;
+	friend class Founders;
+	friend class Statistic;
+
+	friend ifstream& operator>>(ifstream& in, Category& cat)
+	{
+		getline(in, cat.catName);
+
+		if (cat.catName[0] == ' ')
+			cat.catName.erase(0, 1);
+
+		return in;
+	}
+
+};
+
+class Test
+{
+private:
+	vector <Category> categories;
+public:
+
+	friend class Admin;
+	friend class User;
+	friend class Shows;
+	friend class Founders;
+
+};
+
+Test test;
+
+class Shows
+{
+public:
+
+	static bool ShowCategories()
+	{
+		if (test.categories.empty())
+		{
+			cout << "Ask admin to add categories\n";
+			return false;
+		}
+
+		int counter = 1;
+
+		for (auto& i : test.categories)
+			cout << "#" << counter++ << " " << i.catName << endl;
+
+		return true;
+	}
+
+	static bool ShowAllCategories()
+	{
+		if (test.categories.empty())
+			return false;
+
+		int counter = 0;
+		for (auto& i : test.categories)
+			cout << "#" << ++counter << " " << i.catName << endl;
+	}
+	static bool ShowCurrentCategorie(Category* cat)
+	{
+		if (cat == nullptr)
+		{
+			cout << "No one category with this name\n";
+			return false;
+		}
+
+		if (cat->QA.empty())
+		{
+			cout << "This category not have any quest\n";
+			return false;
+		}
+
+		cout << "Category: " << cat->catName << endl;
+
+		for (auto& i : cat->QA)
+		{
+			cout << "\t Question: " << i.question << endl;
+
+			for (size_t k = 0; k < 4; k++)
+				cout << "\t\tAnswer #" << k + 1 << ": " << i.answers[k] << endl;
+
+			cout << "\t\t\tRight answer: " << i.GetTrueAnswer() << endl;
+		}
+		return true;
+	}
+	static void ShowAllQuest()
+	{
+		int counter = 0;
+		for (auto& i : test.categories)
+		{
+			cout << "Category #" << ++counter << " " << i.catName << endl;
+			for (auto& j : i.QA)
+			{
+				cout << "\t Question: " << j.question << endl;
+				for (size_t k = 0; k < 4; k++)
+				{
+					cout << "\t\tAnswer #" << k + 1 << ": " << j.answers[k] << endl;
+				}
+				cout << "\t\t\tRight answer: " << j.GetTrueAnswer() << endl;
+			}
+		}
+	}
+
+
+};
+
+class Founders
+{
+public:
+	static Category* GetCategoryByName(string catName)
+	{
+		for (auto& i : test.categories)
+			if (i.catName == catName)
+				return &i;
+
+		return nullptr;
+	}
+	static int GetCategIndex()
+	{
+		if (!Shows::ShowCategories())
+			return -1;
+
+		int userCateg;
+
+		cout << "Input categories index: ";
+		cin >> userCateg;
+
+		if (userCateg < 0 || userCateg > test.categories.size())
+		{
+			cout << "Input right index\n";
+			return -1;
+		}
+
+		return --userCateg;
+	}
+	static int GetCategIndByName(string categorie)
+	{
+		for (size_t i = 0; i < test.categories.size(); i++)
+			if (test.categories[i].catName == categorie)
+				return i;
+
+		return -1;
+	}
+	static string GetCategoriesName()
+	{
+		string catName;
+
+		if (!Shows::ShowAllCategories())
+		{
+			cout << "No one category\n";
+			return "";
+		}
+
+		cout << "Input category: ";
+		cin.ignore(cin.rdbuf()->in_avail());
+		getline(cin, catName);
+
+		return catName;
+	}
+
+
+	static int CountRightAnsw(const bool* stat, int size)
+	{
+		int counter = 0;
+		for (size_t i = 0; i < size; i++)
+			if (stat[i])
+				counter++;
+
+		return counter;
+	}
+	static bool CheckAndConvertAnswer(char& answer)
+	{
+		if ((answer < 'a' || answer > 'd') && (answer < 'A' || answer > 'D') && (answer < '1' || answer > '4'))
+			return false;
+
+		if (answer >= 'a' && answer <= 'd')
+			answer -= 48;
+
+		else if (answer >= 'A' && answer <= 'D')
+			answer -= 16;
+
+		return true;
+	}
+	static int GetQuestIndByQuest(const Category* cat, string quest)
+	{
+		int counter = 0;
+		for (auto& i : cat->QA)
+		{
+			if (i.question == quest)
+				return counter;
+
+			counter++;
+		}
+
+		return -1;
+	}
+};
+
+
+
+
 class User
 {
 private:
@@ -14,6 +283,59 @@ private:
 	string number = "NoNumber";
 
 public:
+	class Statistic
+	{
+	private:
+		bool* fullAnsw;
+		Category* categ;
+		User* who;
+		int rightRes;
+		double rightInProc;
+
+	public:
+		Statistic(User* who = nullptr, Category* categ = nullptr, bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0)
+			:who(who), categ(categ), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc)
+		{
+		}
+
+		friend ofstream& operator<<(ofstream& out, const Statistic& stat)
+		{
+			out << *(stat.who) << stat.rightRes << " " << stat.rightInProc << " " << stat.categ->GetName() << endl;
+
+			return out;
+		}
+
+		friend ifstream& operator>>(ifstream& in, Statistic& stat)
+		{
+			in >> *stat.who;
+			in >> stat.rightRes;
+			in >> stat.rightInProc;
+			in >> *stat.categ;
+
+			return in;
+		}
+
+		friend ostream& operator<<(ostream& out, const Statistic& stat)
+		{
+
+		}
+
+		void ShowStatWithoutName(int fullCorrect = 12)
+		{
+			cout << "Correct: " << this->rightRes << " / " << fullCorrect << endl;
+			cout << "Right in proc.: " << rightInProc << "%" << endl;
+		}
+
+		void ShowStatWithCategory(/*int fullCorrect = 12*/)
+		{
+			cout << "Category name: " << categ->catName << endl;
+			cout << "Correct: " << this->rightRes /*<< " / " << fullCorrect*/ << endl;
+			cout << "Right in proc.: " << rightInProc << "%" << endl;
+		}
+
+		friend class User;
+	};
+
 	User()
 	{
 
@@ -115,102 +437,327 @@ public:
 		return in;
 	}
 
+	void GoTest()
+	{
+		if (!Shows::ShowCategories())
+			return;
+
+		string categoryName;
+		cin.ignore(cin.rdbuf()->in_avail());
+		cout << "Input category: ";
+		getline(cin, categoryName);
+
+		Category* cat = Founders::GetCategoryByName(categoryName);
+
+		if (cat == nullptr)
+		{
+			cout << "Invalid cat name\n";
+			return;
+		}
+
+		bool isTrue = false;
+		char userAnswer;
+		int size = cat->QA.size();
+		bool* stat = new bool[size];
+
+		int counter = 0;
+		for (auto& i : cat->QA)
+		{
+			cout << "Answer #" << counter + 1 << " / " << size << endl;
+
+			do
+			{
+				i.ShowQuestAnsw();
+
+				cout << "Input your answer: ";
+				cin >> userAnswer;
+			} while (!Founders::CheckAndConvertAnswer(userAnswer));
+
+			if (i.CheckAnsw(userAnswer))
+				stat[counter] = true;
+
+			else
+				stat[counter] = false;
+
+			counter++;
+		}
+
+		int nRight = Founders::CountRightAnsw(stat, size);
+		double rightInProc = (double)(nRight * 100) / size;
+
+		Statistic fullStat{ this, cat, stat, nRight, rightInProc };
+
+		cout << "RESULTS: \n";
+
+		system("cls");
+		fullStat.ShowStatWithoutName(size);
+		system("pause");
+
+		ofstream file("Statistic.txt", ios_base::app);
+
+		if (!file.good())
+		{
+			cout << "Error with statistic.txt file\n";
+			system("pause");
+			return;
+		}
+
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "=============================================\n";
+			cout << "|1. Show correct/incorrect                  |\n";
+			cout << "|2. Show result of this test by other users |\n";
+			cout << "|3. Show older results of this test         |\n";
+			cout << "|4. Exit                                    |\n";
+			cout << "=============================================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				SeeTrueFalse(stat, size, cat);
+				break;
+
+			case 2:
+				SeeResultsByOtherPeople(cat);
+				break;
+
+			case 3:
+				SeeOlderByCurrPerson(cat);
+				break;
+
+			case 4:
+				break;
+
+			default:
+				cout << "Input right value\n";
+				break;
+			}
+			system("pause");
+		} while (choice != 4);
+
+		file << fullStat;
+	}
+
+	bool ShowPersonStat()
+	{
+		ifstream file("Statistic.txt");
+		if (!file.good())
+		{
+			cout << "Error with file\n";
+			return false;
+		}
+
+		Statistic tmp{ &User(), &Category() };
+
+		bool isOne = false;
+
+		while (file.peek() != ifstream::traits_type::eof())
+		{
+			file >> tmp;
+			if (tmp.who->fullName == this->fullName)
+			{
+				isOne = true;
+				tmp.ShowStatWithCategory();
+			}
+		}
+
+		if (!isOne)
+		{
+			cout << "Not found any your test result\n";
+			return false;
+		}
+
+		return true;
+	}
+
+	void SeeTrueFalse(const bool* const answers, int answerSize, const Category* const cat)
+	{
+		for (size_t i = 0; i < answerSize; i++)
+		{
+			cout << "\n" << i + 1 << ") " << cat->QA[i].question << " : " << boolalpha << answers[i] << endl;
+			if (!answers[i])
+				cout << "\tRight answer: " << cat->QA[i].GetTrueAnswer() << endl;
+		}
+	}
+
+	void SeeOlderByCurrPerson(const Category* const cat)
+	{
+		ifstream file("Statistic.txt");
+		if (!file.good())
+		{
+			cout << "Error with file\n";
+			return;
+		}
+
+		Statistic tmp{ &User(), &Category() };
+
+		bool isOne = false;
+
+
+		while (file.peek() != ifstream::traits_type::eof())
+		{
+			file >> tmp;
+			if (tmp.who->fullName == this->fullName && tmp.categ->catName == cat->catName)
+			{
+				isOne = true;
+				tmp.ShowStatWithoutName();
+				cout << endl;
+			}
+		}
+
+		if (!isOne)
+		{
+			cout << "You didn't go this test\n";
+			return;
+		}
+	}
+
+	void SeeResultsByOtherPeople(const Category* const cat)
+	{
+		ifstream file("Statistic.txt");
+		if (!file.good())
+		{
+			cout << "Error with file\n";
+			return;
+		}
+
+		Statistic tmp{ &User(), &Category() };
+
+		bool isOne = false;
+
+
+		while (file.peek() != ifstream::traits_type::eof())
+		{
+			file >> tmp;
+			if (tmp.categ->catName == cat->catName)
+			{
+				cout << "Who: " << tmp.who->fullName << endl;
+				isOne = true;
+				tmp.ShowStatWithoutName();
+				cout << endl;
+			}
+		}
+
+		if (!isOne)
+		{
+			cout << "You are first who going this test\n";
+			return;
+		}
+	}
+
 };
-
-vector <User> users;
-
-struct QuestAnsw
-{
-	string question;
-	string answers[4];
-	int indexCorrect;
-
-	QuestAnsw(string quest, string* answers, int correct)
-		:question(quest), indexCorrect(correct)
-	{
-		for (size_t i = 0; i < 4; i++)
-			this->answers[i] = answers[i];
-	}
-
-	string GetTrueAnswer()
-	{
-		return answers[indexCorrect];
-	}
-
-	void ShowQuestAnsw()
-	{
-		cout << question << ":\n";
-
-		char tmp = 'A';
-
-		for (int i = 0; i < 4; i++)
-			cout << "   " << tmp++ << ". " << answers[i] << endl;
-	}
-
-	bool CheckAnsw(char answer)
-	{
-		return answer - 49 == indexCorrect;
-	}
-
-	friend class Admin;
-	friend class GoTestSystem;
-
-
-};
-
-class Category
-{
-private:
-	string catName;
-	vector<QuestAnsw> QA;
-
-	friend class Test;
-
-public:
-	Category()
-	{
-
-	}
-
-	Category(string catName)
-		:catName(catName)
-	{
-
-	}
-
-	friend class Admin;
-	friend class GoTestSystem;
-
-};
-
-class Test
-{
-private:
-	vector <Category> categories;
-public:
-	Test()
-	{
-		//int userCateg = GetCategIndex();
-		//if (userCateg == -1)
-		//{
-		//	cout << "No one categories\n";
-		//	return;
-		//}
-		//
-		//for (size_t i = 0; i < categories[userCateg].QA.size(); i++)
-		//	categories[--userCateg].QA[i].ShowQuestAnsw();
-
-	}
-
-	friend class Admin;
-	friend class GoTestSystem;
-};
-
-Test test;
 
 class Admin
 {
+
+private:
+	vector <User> users;
+
 public:
+	void FirstEntry()
+	{
+		WriteLogin();
+	}
+
+	void WriteLogin()
+	{
+		ofstream file("ThereAreNoLogin.dat", ios_base::binary || ios::app);
+
+		if (!file.good())
+		{
+			cout << "Error with file\n";
+			return;
+		}
+
+		char login[100];
+		cout << "Input login: ";
+		cin.getline(login, 100);
+
+		int size = sizeof(login);
+
+		file.write(reinterpret_cast<const char*>(&size), sizeof(int));
+
+		for (size_t i = 0; i < strlen(login); i++)
+			login[i] -= 2;
+
+		file.write(reinterpret_cast<const char*>(&login), size);
+	}
+	string ReadLogin()
+	{
+		ifstream file("ThereAreNoLogin.dat", ios_base::binary);
+
+		if (!file.good())
+		{
+			throw "Error with file";
+		}
+		if (file.peek() == ifstream::traits_type::eof())
+		{
+			throw "No one admin in system";
+		}
+
+		int sizeLogin;
+		file.read(reinterpret_cast<char*>(&sizeLogin), sizeof(int));
+
+		char login[100];
+		file.read(reinterpret_cast<char*>(&login), sizeLogin);
+
+		for (size_t i = 0; i < strlen(login); i++)
+			login[i] += 2;
+
+		return login;
+	}
+
+	void WritePass()
+	{
+		ofstream file("ThereAreNoPassword.dat", ios_base::binary || ios::app);
+
+		if (!file.good())
+		{
+			throw "Error with file";
+		}
+
+		char pass[100];
+		cout << "Input password: ";
+		cin.getline(pass, 100);
+
+		int size = sizeof(pass);
+
+		file.write(reinterpret_cast<const char*>(&size), sizeof(int));
+
+		for (size_t i = 0; i < strlen(pass); i++)
+			pass[i] += 3;
+
+		file.write(reinterpret_cast<const char*>(&pass), size);
+	}
+	string ReadPass()
+	{
+		ifstream file("ThereAreNoPassword.dat", ios_base::binary);
+
+		if (!file.good())
+		{
+			throw "Error with file";
+		}
+		if (file.peek() == ifstream::traits_type::eof())
+		{
+			throw "No one admin in system";
+		}
+
+		int sizePass;
+		file.read(reinterpret_cast<char*>(&sizePass), sizeof(int));
+
+		char pass[100];
+		file.read(reinterpret_cast<char*>(&pass), sizePass);
+
+		for (size_t i = 0; i < strlen(pass); i++)
+			pass[i] -= 3;
+
+		return pass;
+	}
+
 	void Entry()
 	{
 
@@ -322,7 +869,7 @@ public:
 
 		bool isNew = false;
 
-		int nCategor = GetCategIndByName(categorie);
+		int nCategor = Founders::GetCategIndByName(categorie);
 		if (nCategor == -1)
 		{
 			isNew = true;
@@ -373,16 +920,16 @@ public:
 	}
 	void DeleteQuestAnsw()
 	{
-		Category* catName = GetCategoryByName(GetCategoriesName());
+		Category* catName = Founders::GetCategoryByName(Founders::GetCategoriesName());
 
-		ShowCurrentCategorie(catName);
+		Shows::ShowCurrentCategorie(catName);
 
 		string quest;
 		cout << "Input quest that you want to delete: ";
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, quest);
 
-		int toDel = GetQuestIndByQuest(catName, quest);
+		int toDel = Founders::GetQuestIndByQuest(catName, quest);
 
 		if (toDel == -1)
 		{
@@ -394,16 +941,16 @@ public:
 	}
 	void EditQuest()
 	{
-		Category* catName = GetCategoryByName(GetCategoriesName());
+		Category* catName = Founders::GetCategoryByName(Founders::GetCategoriesName());
 
-		ShowCurrentCategorie(catName);
+		Shows::ShowCurrentCategorie(catName);
 
 		string quest;
 		cout << "Input quest that you want to delete: ";
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, quest);
 
-		int toDel = GetQuestIndByQuest(catName, quest);
+		int toDel = Founders::GetQuestIndByQuest(catName, quest);
 
 		if (toDel == -1)
 		{
@@ -481,22 +1028,9 @@ public:
 			}
 		} while (choice < 1 || choice > 3);
 	}
-	int GetQuestIndByQuest(const Category* cat, string quest)
-	{
-		int counter = 0;
-		for (auto& i : cat->QA)
-		{
-			if (i.question == quest)
-				return counter;
-
-			counter++;
-		}
-
-		return -1;
-	}
 	void DelQuestAnsw()
 	{
-		if (GetCategIndByName(GetCategoriesName()) == -1)
+		if (Founders::GetCategIndByName(Founders::Founders::GetCategoriesName()) == -1)
 		{
 			cout << "Incorrect category name\n";
 			return;
@@ -512,7 +1046,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, catName);
 
-		if (GetCategIndByName(catName) != -1)
+		if (Founders::GetCategIndByName(catName) != -1)
 		{
 			cout << "This categ name is exist\n";
 			return;
@@ -527,7 +1061,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, catName);
 
-		int index = GetCategIndByName(catName);
+		int index = Founders::GetCategIndByName(catName);
 
 		if (index == -1)
 		{
@@ -544,7 +1078,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, catName);
 
-		int index = GetCategIndByName(catName);
+		int index = Founders::GetCategIndByName(catName);
 
 		if (index == -1)
 		{
@@ -559,130 +1093,19 @@ public:
 
 		test.categories[index].catName = newCatName;
 	}
-	int GetCategIndex()
+
+	void ShowMenu()
 	{
-		if (!ShowCategories())
-			return -1;
-
-		int userCateg;
-
-		cout << "Input categories index: ";
-		cin >> userCateg;
-
-		if (userCateg < 0 || userCateg > test.categories.size())
-		{
-			cout << "Input right index\n";
-			return -1;
-		}
-
-		return --userCateg;
-	}
-	int GetCategIndByName(string categorie)
-	{
-		for (size_t i = 0; i < test.categories.size(); i++)
-			if (test.categories[i].catName == categorie)
-				return i;
-
-		return -1;
-	}
-	string GetCategoriesName()
-	{
-		string catName;
-
-		if (!ShowAllCategories())
-		{
-			cout << "No one category\n";
-			return "";
-		}
-
-		cout << "Input category: ";
-		cin.ignore(cin.rdbuf()->in_avail());
-		getline(cin, catName);
-
-		return catName;
-	}
-	Category* GetCategoryByName(string catName)
-	{
-		for (auto& i : test.categories)
-			if (i.catName == catName)
-				return &i;
-
-		return nullptr;
+		cout << "=================\n";
+		cout << "| 1. Users      | \n";
+		cout << "| 2. Questions  |\n";
+		cout << "| 3. Categories |\n";
+		cout << "=================\n";
 	}
 
-	//Shows
-	bool ShowCategories()
+	/*void GoTest()
 	{
-		if (test.categories.empty())
-		{
-			cout << "Ask admin to add categories\n";
-			return false;
-		}
-
-		int counter = 1;
-
-		for (auto& i : test.categories)
-			cout << "#" << counter++ << " " << i.catName << endl;
-
-		return true;
-	}
-	bool ShowAllCategories()
-	{
-		if (test.categories.empty())
-			return false;
-
-		int counter = 0;
-		for (auto& i : test.categories)
-			cout << "#" << ++counter << " " << i.catName << endl;
-	}
-	bool ShowCurrentCategorie(Category* cat)
-	{
-		if (cat == nullptr)
-		{
-			cout << "No one category with this name\n";
-			return false;
-		}
-
-		if (cat->QA.empty())
-		{
-			cout << "This category not have any quest\n";
-			return false;
-		}
-
-		cout << "Category: " << cat->catName << endl;
-
-		for (auto& i : cat->QA)
-		{
-			cout << "\t Question: " << i.question << endl;
-
-			for (size_t k = 0; k < 4; k++)
-				cout << "\t\tAnswer #" << k + 1 << ": " << i.answers[k] << endl;
-
-			cout << "\t\t\tRight answer: " << i.GetTrueAnswer() << endl;
-		}
-		return true;
-	}
-	void ShowAllQuest()
-	{
-		int counter = 0;
-		for (auto& i : test.categories)
-		{
-			cout << "Category #" << ++counter << " " << i.catName << endl;
-			for (auto& j : i.QA)
-			{
-				cout << "\t Question: " << j.question << endl;
-				for (size_t k = 0; k < 4; k++)
-				{
-					cout << "\t\tAnswer #" << k + 1 << ": " << j.answers[k] << endl;
-				}
-				cout << "\t\t\tRight answer: " << j.GetTrueAnswer() << endl;
-			}
-		}
-	}
-
-	void GoTest()
-	{
-		if (!ShowCategories())
+		if (!Shows::ShowCategories())
 			return;
 
 		string categoryName;
@@ -690,7 +1113,7 @@ public:
 		cout << "Input category: ";
 		getline(cin, categoryName);
 
-		Category* cat = GetCategoryByName(categoryName);
+		Category* cat = Founders::GetCategoryByName(categoryName);
 
 		if (cat == nullptr)
 		{
@@ -701,7 +1124,7 @@ public:
 		bool isTrue = false;
 		char userAnswer;
 		int size = cat->QA.size();
-		int* stat = new int[size];
+		bool* stat = new bool[size];
 
 		int counter = 0;
 		for (auto& i : cat->QA)
@@ -714,67 +1137,54 @@ public:
 
 				cout << "Input your answer: ";
 				cin >> userAnswer;
-			} while (!CheckAndConvertAnswer(userAnswer));
+			} while (!Founders::CheckAndConvertAnswer(userAnswer));
 
 			if (i.CheckAnsw(userAnswer))
-				stat[counter] = 1;
+				stat[counter] = true;
 
 			else
-				stat[counter] = 0;
+				stat[counter] = false;
 
 			counter++;
 		}
 
-		int nRight = CountRightAnsw(stat, size);
+		int nRight = Founders::CountRightAnsw(stat, size);
 		int rightInProc = (nRight * 100) / size;
 		cout << "RESULTS: \n";
 
 		cout << "Correct: " << nRight << endl;
 		cout << "Right in proc.: " << rightInProc << "%" << endl;
-	};
+	};*/
 
-	int CountRightAnsw(const int* stat, int size)
-	{
-		int counter = 0;
-		for (size_t i = 0; i < size; i++)
-			if (stat[i] == 1)
-				counter++;
 
-		return counter;
-	}
-
-	bool CheckAndConvertAnswer(char& answer)
-	{
-		if ((answer < 'a' || answer > 'd') && (answer < 'A' || answer > 'D') && (answer < '1' || answer > '4'))
-			return false;
-
-		if (answer >= 'a' && answer <= 'd')
-			answer -= 48;
-
-		else if (answer >= 'A' && answer <= 'D')
-			answer -= 16;
-
-		return true;
-	}
 };
-
 
 int main()
 {
 	srand(time(nullptr));
 
 	Admin kolya;
-	kolya.AddNewCategorie();
-	kolya.AddQuestAnsw();
-//	kolya.AddQuestAnsw();
-	//kolya.AddQuestAnsw();
 
+	//cout << kolya.ReadLogin() << kolya.ReadPass() << endl;
+	//kolya.AddNewCategorie();
+	kolya.AddQuestAnsw();
 	//kolya.AddQuestAnsw();
-	//kolya.AddQuestAnsw();
-	//kolya.ShowCurrentCategorie(kolya.GetCategoryByName(kolya.GetCategoriesName()));
-	//kolya.EditQuest();
-	//kolya.ShowAllQuest();
-	kolya.GoTest();
+	//	//kolya.AddQuestAnsw();
+
+	//	//kolya.AddQuestAnsw();
+	//	//kolya.AddQuestAnsw();
+	//	//kolya.Shows::ShowCurrentCategorie(kolya.GetCategoryByName(kolya.Founders::GetCategoriesName()));
+	//	//kolya.EditQuest();
+	//	//kolya.ShowAllQuest();
+	User lox;
+	lox.GoTest();
+	lox.GoTest();
+
+	User kolya1("Koval", "123str", "12");
+	kolya1.GoTest();
+	//lox.ShowPersonStat();
+
+
 
 	//Test test;
 	//kolya.AddUser();
