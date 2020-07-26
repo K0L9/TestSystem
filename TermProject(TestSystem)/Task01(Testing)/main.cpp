@@ -103,10 +103,9 @@ public:
 
 Test test;
 
-class Shows
+class Shows 
 {
 public:
-
 	static bool ShowCategories()
 	{
 		if (test.categories.empty())
@@ -176,8 +175,6 @@ public:
 			}
 		}
 	}
-
-
 };
 
 class Founders
@@ -272,8 +269,45 @@ public:
 	}
 };
 
+class User;
+class Statistic
+{
+public:
+	bool* fullAnsw;
+	Category* categ;
+	User* who;
+	int rightRes;
+	double rightInProc;
+	int size;
 
+public:
+	Statistic(User* who = nullptr, Category* categ = nullptr, bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0, int size = 0)
+		:who(who), categ(categ), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc), size(size)
+	{
+	}
 
+	friend ofstream& operator<<(ofstream& out, const Statistic& stat);
+
+	friend ifstream& operator>>(ifstream& in, Statistic& stat);
+
+	friend ostream& operator<<(ostream& out, const Statistic& stat)
+	{}
+
+	void ShowStatWithoutName()
+	{
+		cout << "Correct: " << this->rightRes  << " / " << size << endl;
+		cout << "Right in proc.: " << rightInProc << "%" << endl;
+	}
+
+	void ShowStatWithCategory()
+	{
+		cout << "Category name: " << categ->catName << endl;
+		cout << "Correct: " << this->rightRes << " / " << size << endl;
+		cout << "Right in proc.: " << rightInProc << "%" << endl;
+	}
+
+	friend class User;
+};
 
 class User
 {
@@ -283,58 +317,7 @@ private:
 	string number = "NoNumber";
 
 public:
-	class Statistic
-	{
-	private:
-		bool* fullAnsw;
-		Category* categ;
-		User* who;
-		int rightRes;
-		double rightInProc;
-
-	public:
-		Statistic(User* who = nullptr, Category* categ = nullptr, bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0)
-			:who(who), categ(categ), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc)
-		{
-		}
-
-		friend ofstream& operator<<(ofstream& out, const Statistic& stat)
-		{
-			out << *(stat.who) << stat.rightRes << " " << stat.rightInProc << " " << stat.categ->GetName() << endl;
-
-			return out;
-		}
-
-		friend ifstream& operator>>(ifstream& in, Statistic& stat)
-		{
-			in >> *stat.who;
-			in >> stat.rightRes;
-			in >> stat.rightInProc;
-			in >> *stat.categ;
-
-			return in;
-		}
-
-		friend ostream& operator<<(ostream& out, const Statistic& stat)
-		{
-
-		}
-
-		void ShowStatWithoutName(int fullCorrect = 12)
-		{
-			cout << "Correct: " << this->rightRes << " / " << fullCorrect << endl;
-			cout << "Right in proc.: " << rightInProc << "%" << endl;
-		}
-
-		void ShowStatWithCategory(/*int fullCorrect = 12*/)
-		{
-			cout << "Category name: " << categ->catName << endl;
-			cout << "Correct: " << this->rightRes /*<< " / " << fullCorrect*/ << endl;
-			cout << "Right in proc.: " << rightInProc << "%" << endl;
-		}
-
-		friend class User;
-	};
+	
 
 	User()
 	{
@@ -388,7 +371,7 @@ public:
 
 	friend ofstream& operator<<(ofstream& out, const User& user)
 	{
-		out << user.fullName << " " << user.address << " " << user.number << endl;
+		out << user.fullName << endl << user.address << endl << user.number << endl;
 
 		return out;
 	}
@@ -405,9 +388,9 @@ public:
 	{
 		string fullName, address, number;
 
-		in >> fullName;
-		in >> address;
-		in >> number;
+		getline(in, fullName);
+		getline(in, address);
+		getline(in, number);
 
 		user.SetFullName(fullName);
 		user.SetAddress(address);
@@ -485,12 +468,11 @@ public:
 		int nRight = Founders::CountRightAnsw(stat, size);
 		double rightInProc = (double)(nRight * 100) / size;
 
-		Statistic fullStat{ this, cat, stat, nRight, rightInProc };
+		Statistic fullStat{ this, cat, stat, nRight, rightInProc, size };
 
 		cout << "RESULTS: \n";
 
-		system("cls");
-		fullStat.ShowStatWithoutName(size);
+		fullStat.ShowStatWithoutName();
 		system("pause");
 
 		ofstream file("Statistic.txt", ios_base::app);
@@ -648,12 +630,27 @@ public:
 			return;
 		}
 	}
-
 };
+
+ifstream& operator>>(ifstream& in, Statistic& stat)
+{
+	in >> *stat.who;
+	in >> stat.rightRes;
+	in >> stat.rightInProc;
+	in >> stat.size;
+	in >> *stat.categ;
+
+	return in;
+}
+ofstream& operator<<(ofstream& out, const Statistic& stat)
+{
+	out << *(stat.who) << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categ->GetName() << endl;
+
+	return out;
+}
 
 class Admin
 {
-
 private:
 	vector <User> users;
 
@@ -862,6 +859,9 @@ public:
 	//Questions
 	void AddQuestAnsw()
 	{
+		if (!Shows::ShowAllCategories())
+			cout << "No one categories yet\n";
+
 		string categorie;
 		cout << "Input category: ";
 		cin.ignore(cin.rdbuf()->in_avail());
@@ -1094,6 +1094,47 @@ public:
 		test.categories[index].catName = newCatName;
 	}
 
+	//Statistic
+	void ShowStatisticByCurrentPeople()
+	{
+		ifstream file("Statistic.txt");
+
+		if (!file.good())
+		{
+			cout << "Error with file\n";
+			return;
+		}
+		if (file.peek() == fstream::traits_type::eof())
+		{
+			cout << "File is empty\n";
+			return;
+		}
+
+		string fullName;
+		cout << "What full name in person, which stat. you want to see: ";
+		cin.ignore(cin.rdbuf()->in_avail());
+		getline(cin, fullName);
+
+		Statistic tmp(&User(), &Category());
+		bool isOne = false;
+
+		while (!file.eof())
+		{
+			file >> tmp;
+
+			if (tmp.who->GetFullName() == fullName)
+			{
+				tmp.ShowStatWithCategory();
+				cout << endl;
+				isOne = true;
+			}
+		}
+
+		if (!isOne)
+			cout << "Invalid user name or this user don't go any test\n";
+
+	}
+
 	void ShowMenu()
 	{
 		cout << "=================\n";
@@ -1164,36 +1205,12 @@ int main()
 	srand(time(nullptr));
 
 	Admin kolya;
-
-	//cout << kolya.ReadLogin() << kolya.ReadPass() << endl;
-	//kolya.AddNewCategorie();
 	kolya.AddQuestAnsw();
-	//kolya.AddQuestAnsw();
-	//	//kolya.AddQuestAnsw();
+	
+	User user;
+	user.GoTest();
 
-	//	//kolya.AddQuestAnsw();
-	//	//kolya.AddQuestAnsw();
-	//	//kolya.Shows::ShowCurrentCategorie(kolya.GetCategoryByName(kolya.Founders::GetCategoriesName()));
-	//	//kolya.EditQuest();
-	//	//kolya.ShowAllQuest();
-	User lox;
-	lox.GoTest();
-	lox.GoTest();
-
-	User kolya1("Koval", "123str", "12");
-	kolya1.GoTest();
-	//lox.ShowPersonStat();
-
-
-
-	//Test test;
-	//kolya.AddUser();
-	//kolya.AddUser();
-	//kolya.ShowUsers();
-	//kolya.UserEdit();
-	//kolya.ShowUsers();
-
-
+	kolya.ShowStatisticByCurrentPeople();
 
 	return 0;
 }

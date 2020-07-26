@@ -139,7 +139,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Admin.cpp" />
+    <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TestAndQuestion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ThereAreNoLogin.dat" />
@@ -147,6 +150,12 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Statistic.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Admin.h" />
+    <ClInclude Include="Helpers.h" />
+    <ClInclude Include="TestAndQuestion.h" />
+    <ClInclude Include="User.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
