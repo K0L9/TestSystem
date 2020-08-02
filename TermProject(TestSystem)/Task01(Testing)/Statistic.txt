@@ -1,7 +1,0 @@
-NoFullName
-NoAddress
-NoNumber
-1 100 1 1NoFullName
-NoAddress
-NoNumber
-1 100 1 Math

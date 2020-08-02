@@ -5,6 +5,7 @@
 #include <ctime>
 
 using namespace std;
+#define CLEAR cin.ignore(cin.rdbuf()->in_avail())
 
 struct QuestAnsw
 {
@@ -85,7 +86,6 @@ public:
 
 		return in;
 	}
-
 };
 
 class Test
@@ -100,15 +100,14 @@ public:
 	friend class Founders;
 
 };
+//Test test;
 
-Test test;
-
-class Shows 
+class Shows
 {
 public:
-	static bool ShowCategories()
+	static bool ShowCategories(const Test& tests)
 	{
-		if (test.categories.empty())
+		if (tests.categories.empty())
 		{
 			cout << "Ask admin to add categories\n";
 			return false;
@@ -116,19 +115,19 @@ public:
 
 		int counter = 1;
 
-		for (auto& i : test.categories)
+		for (auto& i : tests.categories)
 			cout << "#" << counter++ << " " << i.catName << endl;
 
 		return true;
 	}
 
-	static bool ShowAllCategories()
+	static bool ShowAllCategories(const Test& tests)
 	{
-		if (test.categories.empty())
+		if (tests.categories.empty())
 			return false;
 
 		int counter = 0;
-		for (auto& i : test.categories)
+		for (auto& i : tests.categories)
 			cout << "#" << ++counter << " " << i.catName << endl;
 	}
 	static bool ShowCurrentCategorie(Category* cat)
@@ -158,10 +157,10 @@ public:
 		}
 		return true;
 	}
-	static void ShowAllQuest()
+	static void ShowAllQuest(const Test& tests)
 	{
 		int counter = 0;
-		for (auto& i : test.categories)
+		for (auto& i : tests.categories)
 		{
 			cout << "Category #" << ++counter << " " << i.catName << endl;
 			for (auto& j : i.QA)
@@ -177,20 +176,21 @@ public:
 	}
 };
 
+class User;
 class Founders
 {
 public:
-	static Category* GetCategoryByName(string catName)
+	static Category* GetCategoryByName(string catName, Test& tests)
 	{
-		for (auto& i : test.categories)
+		for (auto& i : tests.categories)
 			if (i.catName == catName)
 				return &i;
 
 		return nullptr;
 	}
-	static int GetCategIndex()
+	static int GetCategIndex(const Test& tests)
 	{
-		if (!Shows::ShowCategories())
+		if (!Shows::ShowCategories(tests))
 			return -1;
 
 		int userCateg;
@@ -198,7 +198,7 @@ public:
 		cout << "Input categories index: ";
 		cin >> userCateg;
 
-		if (userCateg < 0 || userCateg > test.categories.size())
+		if (userCateg < 0 || userCateg > tests.categories.size())
 		{
 			cout << "Input right index\n";
 			return -1;
@@ -206,19 +206,19 @@ public:
 
 		return --userCateg;
 	}
-	static int GetCategIndByName(string categorie)
+	static int GetCategIndByName(string categorie, const Test& tests)
 	{
-		for (size_t i = 0; i < test.categories.size(); i++)
-			if (test.categories[i].catName == categorie)
+		for (size_t i = 0; i < tests.categories.size(); i++)
+			if (tests.categories[i].catName == categorie)
 				return i;
 
 		return -1;
 	}
-	static string GetCategoriesName()
+	static string GetCategoriesName(const Test& tests)
 	{
 		string catName;
 
-		if (!Shows::ShowAllCategories())
+		if (!Shows::ShowAllCategories(tests))
 		{
 			cout << "No one category\n";
 			return "";
@@ -267,6 +267,44 @@ public:
 
 		return -1;
 	}
+
+	static bool CheckPass(string str)
+	{
+		if (str.size() < 8)
+			throw logic_error("Your pass must have min 8 characters");
+
+		bool isOneBig, isOneSmall, isOneDigit;
+		isOneBig = isOneDigit = isOneSmall = false;
+
+		for (size_t i = 0; i < str.size(); i++)
+		{
+			if (str[i] >= 'a' && str[i] <= 'z')
+				isOneSmall = true;
+
+			else if (str[i] >= 'A' && str[i] <= 'Z')
+				isOneBig = true;
+
+			else if (str[i] >= '0' && str[i] <= '9')
+				isOneDigit = true;
+		}
+
+		if (!isOneBig)
+			throw logic_error("Your pass must have min 1 BIG letter");
+		if (!isOneSmall)
+			throw logic_error("Your pass must have min 1 small letter");
+		if (!isOneDigit)
+			throw logic_error("Your pass must have min 1 digit");
+
+	}
+	static bool CheckLogin(string str)
+	{
+		if (str.size() < 3)
+			throw logic_error("Your login must have min 3 characters");
+
+		for (size_t i = 0; i < str.size(); i++)
+			if (!(str[i] >= 'a' && str[i] <= 'z' || str[i] >= 'A' && str[i] <= 'Z' || str[i] >= '0' && str[i] <= '9' || str[i] == '_'))
+				throw logic_error("Your login can have only digits, letters and _");
+	}
 };
 
 class User;
@@ -295,7 +333,7 @@ public:
 
 	void ShowStatWithoutName()
 	{
-		cout << "Correct: " << this->rightRes  << " / " << size << endl;
+		cout << "Correct: " << this->rightRes << " / " << size << endl;
 		cout << "Right in proc.: " << rightInProc << "%" << endl;
 	}
 
@@ -315,11 +353,17 @@ private:
 	string fullName = "NoFullName";
 	string address = "NoAddress";
 	string number = "NoNumber";
+	const string pass;
+	const string login;
 
 public:
-	
-
 	User()
+	{
+
+	}
+
+	User(string ulogin, string upass)
+		: login(ulogin), pass(upass)
 	{
 
 	}
@@ -368,6 +412,14 @@ public:
 	{
 		return number;
 	}
+	string GetLogin() const
+	{
+		return this->login;
+	}
+	string GetPass() const
+	{
+		return this->pass;
+	}
 
 	friend ofstream& operator<<(ofstream& out, const User& user)
 	{
@@ -380,6 +432,8 @@ public:
 		out << "Fullname: " << user.fullName << endl;
 		out << "\tUser's address: " << user.address << endl;
 		out << "\tUser's number: " << user.number << endl;
+		out << "\tUser's login: " << user.login << endl;
+		out << "\tUser's password: " << user.pass << endl;
 
 		return out;
 	}
@@ -403,6 +457,7 @@ public:
 		string fullName, address, number;
 
 		cout << "Input user's fullname: ";
+		in.ignore(in.rdbuf()->in_avail());
 		getline(in, fullName);
 
 		cout << "Input user's address: ";
@@ -420,9 +475,18 @@ public:
 		return in;
 	}
 
-	void GoTest()
+	User operator=(const User& other)
 	{
-		if (!Shows::ShowCategories())
+		this->fullName = other.fullName;
+		this->address = other.address;
+		this->number = other.number;
+
+		return *this;
+	}
+
+	void GoTest(Test& tests)
+	{
+		if (!Shows::ShowCategories(tests))
 			return;
 
 		string categoryName;
@@ -430,7 +494,7 @@ public:
 		cout << "Input category: ";
 		getline(cin, categoryName);
 
-		Category* cat = Founders::GetCategoryByName(categoryName);
+		Category* cat = Founders::GetCategoryByName(categoryName, tests);
 
 		if (cat == nullptr)
 		{
@@ -492,7 +556,7 @@ public:
 			cout << "|1. Show correct/incorrect                  |\n";
 			cout << "|2. Show result of this test by other users |\n";
 			cout << "|3. Show older results of this test         |\n";
-			cout << "|4. Exit                                    |\n";
+			cout << "|0. Exit                                    |\n";
 			cout << "=============================================\n";
 			cout << "Input your choice: ";
 			cin >> choice;
@@ -511,17 +575,17 @@ public:
 				SeeOlderByCurrPerson(cat);
 				break;
 
-			case 4:
-				break;
+			case 0:
+				file << fullStat;
+				return;
 
 			default:
 				cout << "Input right value\n";
 				break;
 			}
 			system("pause");
-		} while (choice != 4);
+		} while (choice != 0);
 
-		file << fullStat;
 	}
 
 	bool ShowPersonStat()
@@ -555,7 +619,6 @@ public:
 
 		return true;
 	}
-
 	void SeeTrueFalse(const bool* const answers, int answerSize, const Category* const cat)
 	{
 		for (size_t i = 0; i < answerSize; i++)
@@ -565,7 +628,6 @@ public:
 				cout << "\tRight answer: " << cat->QA[i].GetTrueAnswer() << endl;
 		}
 	}
-
 	void SeeOlderByCurrPerson(const Category* const cat)
 	{
 		ifstream file("Statistic.txt");
@@ -578,7 +640,6 @@ public:
 		Statistic tmp{ &User(), &Category() };
 
 		bool isOne = false;
-
 
 		while (file.peek() != ifstream::traits_type::eof())
 		{
@@ -597,7 +658,6 @@ public:
 			return;
 		}
 	}
-
 	void SeeResultsByOtherPeople(const Category* const cat)
 	{
 		ifstream file("Statistic.txt");
@@ -630,6 +690,70 @@ public:
 			return;
 		}
 	}
+
+	void MainUserMenu(Test& tests)
+	{
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "====================================\n";
+			cout << "|1. Go test                        |\n";
+			cout << "|2. Show full person stat          |\n";
+			cout << "|3. Show statistic by curent test  |\n";
+			cout << "|4. Show statistic by curent categ |\n";
+			cout << "|0. Exit                           |\n";
+			cout << "====================================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				system("cls");
+				GoTest(tests);
+				break;
+
+			case 2:
+				system("cls");
+				ShowPersonStat();
+				break;
+
+			case 3:
+				cout << "Coming soon\n";
+				break;
+
+			case 4:
+			{
+				system("cls");
+				Shows::ShowAllCategories(tests);
+
+				string choose;
+				cout << "Input category (that's no all category, you can know more categories): ";
+				CLEAR;
+				getline(cin, choose);
+				int nChoose = Founders::GetCategIndByName(choose, tests);
+
+				if (nChoose == -1)
+				{
+					cout << "Invalid category name\n";
+					break;
+				}
+
+				SeeOlderByCurrPerson(&tests.categories[nChoose]);
+
+				break;
+			}
+			case 0:
+				return;
+			default:
+				cout << "Input right choice(0-4)\n";
+				break;
+			}
+			system("pause");
+		} while (choice != 0);
+
+	}
 };
 
 ifstream& operator>>(ifstream& in, Statistic& stat)
@@ -652,12 +776,14 @@ ofstream& operator<<(ofstream& out, const Statistic& stat)
 class Admin
 {
 private:
-	vector <User> users;
+	vector <User>& users;
+	Test& tests;
 
 public:
-	void FirstEntry()
+	Admin(vector <User>& users, Test& tests)
+		:users(users), tests(tests)
 	{
-		WriteLogin();
+
 	}
 
 	void WriteLogin()
@@ -665,14 +791,31 @@ public:
 		ofstream file("ThereAreNoLogin.dat", ios_base::binary || ios::app);
 
 		if (!file.good())
-		{
-			cout << "Error with file\n";
-			return;
-		}
+			throw logic_error("Error with file");
 
 		char login[100];
-		cout << "Input login: ";
-		cin.getline(login, 100);
+		bool isTrue = false;
+
+		do
+		{
+			cout << "Input login: ";
+			CLEAR;
+			cin.getline(login, 100);
+
+			try
+			{
+				Founders::CheckLogin(login);
+				isTrue = true;
+			}
+
+			catch (const logic_error& ex)
+			{
+				cout << ex.what() << endl;
+				system("pause");
+				system("cls");
+			}
+
+		} while (!isTrue);
 
 		int size = sizeof(login);
 
@@ -688,13 +831,9 @@ public:
 		ifstream file("ThereAreNoLogin.dat", ios_base::binary);
 
 		if (!file.good())
-		{
-			throw "Error with file";
-		}
+			throw logic_error("Error with file");
 		if (file.peek() == ifstream::traits_type::eof())
-		{
-			throw "No one admin in system";
-		}
+			throw logic_error("No one admin in system");
 
 		int sizeLogin;
 		file.read(reinterpret_cast<char*>(&sizeLogin), sizeof(int));
@@ -713,13 +852,31 @@ public:
 		ofstream file("ThereAreNoPassword.dat", ios_base::binary || ios::app);
 
 		if (!file.good())
-		{
-			throw "Error with file";
-		}
+			throw logic_error("Error with file");
 
+		bool isTrue = false;
 		char pass[100];
-		cout << "Input password: ";
-		cin.getline(pass, 100);
+		do
+		{
+			cout << "Input password: ";
+			CLEAR;
+			cin.getline(pass, 100);
+
+			try
+			{
+				Founders::CheckPass(pass);
+				isTrue = true;
+			}
+
+			catch (const logic_error& ex)
+			{
+				cout << ex.what() << endl;
+				system("pause");
+				system("cls");
+			}
+
+		} while (!isTrue);
+
 
 		int size = sizeof(pass);
 
@@ -735,13 +892,9 @@ public:
 		ifstream file("ThereAreNoPassword.dat", ios_base::binary);
 
 		if (!file.good())
-		{
-			throw "Error with file";
-		}
+			throw logic_error("Error with file");
 		if (file.peek() == ifstream::traits_type::eof())
-		{
-			throw "No one admin in system";
-		}
+			throw logic_error("No one admin in system");
 
 		int sizePass;
 		file.read(reinterpret_cast<char*>(&sizePass), sizeof(int));
@@ -755,9 +908,84 @@ public:
 		return pass;
 	}
 
-	void Entry()
+	bool IsFirst()
 	{
+		ifstream fileLog("ThereAreNoLogin.dat");
+		if (fileLog.peek() == ifstream::traits_type::eof())
+		{
+			fileLog.close();
+			return true;
+		}
 
+		return false;
+	}
+	bool EntryAdmin()
+	{
+		if (IsFirst())
+		{
+			cout << "You are first admin, go login up\n";
+			system("pause");
+			system("cls");
+			try
+			{
+				WriteLogin();
+				WritePass();
+			}
+			catch (const logic_error& ex)
+			{
+				cout << ex.what() << endl;
+				system("pause");
+				system("cls");
+				return false;
+			}
+
+			cout << "Admin are succesfully loged\n";
+			system("pause");
+		}
+
+		system("cls");
+		cout << "------Entering------\n";
+
+		string login, pass;
+		cout << "Input login: ";
+		CLEAR;
+		getline(cin, login);
+		string loginInSys, passInSys;
+
+		try
+		{
+			loginInSys = ReadLogin();
+			passInSys = ReadPass();
+		}
+		catch (const logic_error& ex)
+		{
+			cout << ex.what() << endl;
+			system("pause");
+			system("cls");
+			return false;
+		}
+
+		if (login != loginInSys)
+		{
+			cout << "Invalid login\n";
+			system("pause");
+			system("cls");
+			return false;
+		}
+
+		cout << "Input password: ";
+		CLEAR;
+		getline(cin, pass);
+
+		if (pass != passInSys)
+		{
+			cout << "Invalid password\n";
+			system("pause");
+			system("cls");
+			return false;
+		}
+
+		return true;
 	}
 
 	//users
@@ -778,13 +1006,69 @@ public:
 
 		return true;
 	}
+	bool CheckExistLogin(string log)
+	{
+		for (auto& i : users)
+			if (i.GetLogin() == log)
+				throw logic_error("This login is exist");
+	}
 	void AddUser()
 	{
-		User tmpUser;
-		cin >> tmpUser;
+		string login, pass;
 
-		users.push_back(tmpUser);
+		bool isTrue = false;
+
+		do
+		{
+			system("cls");
+			cout << "Input login: ";
+			cin.ignore(cin.rdbuf()->in_avail());
+			getline(cin, login);
+
+			try
+			{
+				CheckExistLogin(login);
+				Founders::CheckLogin(login);
+				isTrue = true;
+			}
+
+			catch (const exception& ex)
+			{
+				cout << ex.what() << endl;
+				system("pause");
+			}
+
+		} while (!isTrue);
+		isTrue = false;
+		do
+		{
+			system("cls");
+			cout << "Input password: ";
+			cin.ignore(cin.rdbuf()->in_avail());
+			getline(cin, pass);
+
+			try
+			{
+				Founders::CheckPass(pass);
+				isTrue = true;
+			}
+
+			catch (const exception& ex)
+			{
+				cout << ex.what() << endl;
+				system("pause");
+			}
+
+		} while (!isTrue);
+
+		User user(login, pass);
+		system("cls");
+		cin >> user;
+		users.push_back(user);
+
+		cout << "User are sucesfully added\n";
 	}
+
 	void DeleteUser()
 	{
 		if (!ShowUsers())
@@ -859,7 +1143,7 @@ public:
 	//Questions
 	void AddQuestAnsw()
 	{
-		if (!Shows::ShowAllCategories())
+		if (!Shows::ShowAllCategories(tests))
 			cout << "No one categories yet\n";
 
 		string categorie;
@@ -869,12 +1153,12 @@ public:
 
 		bool isNew = false;
 
-		int nCategor = Founders::GetCategIndByName(categorie);
+		int nCategor = Founders::GetCategIndByName(categorie, tests);
 		if (nCategor == -1)
 		{
 			isNew = true;
 			cout << "No one category with title " << categorie << " will be create new category " << endl;
-			test.categories.push_back(categorie);
+			tests.categories.push_back(categorie);
 		}
 
 		//if (test.categories[nCategor].QA.size() > 12)
@@ -913,14 +1197,14 @@ public:
 		} while (!isRight);
 
 		if (isNew || categorie.size() == 0)
-			test.categories.back().Category::QA.push_back(QuestAnsw(quest, answers, rightAnsw - 1));
+			tests.categories.back().Category::QA.push_back(QuestAnsw(quest, answers, rightAnsw - 1));
 
 		else
-			test.categories[nCategor].Category::QA.push_back(QuestAnsw(quest, answers, rightAnsw - 1));
+			tests.categories[nCategor].Category::QA.push_back(QuestAnsw(quest, answers, rightAnsw - 1));
 	}
 	void DeleteQuestAnsw()
 	{
-		Category* catName = Founders::GetCategoryByName(Founders::GetCategoriesName());
+		Category* catName = Founders::GetCategoryByName(Founders::GetCategoriesName(tests), tests);
 
 		Shows::ShowCurrentCategorie(catName);
 
@@ -941,7 +1225,7 @@ public:
 	}
 	void EditQuest()
 	{
-		Category* catName = Founders::GetCategoryByName(Founders::GetCategoriesName());
+		Category* catName = Founders::GetCategoryByName(Founders::GetCategoriesName(tests), tests);
 
 		Shows::ShowCurrentCategorie(catName);
 
@@ -1028,15 +1312,14 @@ public:
 			}
 		} while (choice < 1 || choice > 3);
 	}
-	void DelQuestAnsw()
-	{
-		if (Founders::GetCategIndByName(Founders::Founders::GetCategoriesName()) == -1)
-		{
-			cout << "Incorrect category name\n";
-			return;
-		}
-
-	}
+	//void DelQuestAnsw()
+	//{
+	//	if (Founders::GetCategIndByName(Founders::Founders::GetCategoriesName()) == -1)
+	//	{
+	//		cout << "Incorrect category name\n";
+	//		return;
+	//	}
+	//}
 
 	//Categories
 	void AddNewCategorie()
@@ -1046,13 +1329,13 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, catName);
 
-		if (Founders::GetCategIndByName(catName) != -1)
+		if (Founders::GetCategIndByName(catName, tests) != -1)
 		{
 			cout << "This categ name is exist\n";
 			return;
 		}
 
-		test.categories.push_back(catName);
+		tests.categories.push_back(catName);
 	}
 	void DeleteCateg()
 	{
@@ -1061,7 +1344,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, catName);
 
-		int index = Founders::GetCategIndByName(catName);
+		int index = Founders::GetCategIndByName(catName, tests);
 
 		if (index == -1)
 		{
@@ -1069,7 +1352,7 @@ public:
 			return;
 		}
 
-		test.categories.erase(test.categories.begin() + index);
+		tests.categories.erase(tests.categories.begin() + index);
 	}
 	void RenameCateg()
 	{
@@ -1078,7 +1361,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, catName);
 
-		int index = Founders::GetCategIndByName(catName);
+		int index = Founders::GetCategIndByName(catName, tests);
 
 		if (index == -1)
 		{
@@ -1091,7 +1374,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, newCatName);
 
-		test.categories[index].catName = newCatName;
+		tests.categories[index].catName = newCatName;
 	}
 
 	//Statistic
@@ -1110,7 +1393,10 @@ public:
 			return;
 		}
 
+		if (!ShowUsers())
+			return;
 		string fullName;
+		cout << "WARNING! This is't all users, you can know user with other fullname\n";
 		cout << "What full name in person, which stat. you want to see: ";
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, fullName);
@@ -1134,14 +1420,45 @@ public:
 			cout << "Invalid user name or this user don't go any test\n";
 
 	}
-
-	void ShowMenu()
+	void ShowStatisticByCurrentCategory()
 	{
-		cout << "=================\n";
-		cout << "| 1. Users      | \n";
-		cout << "| 2. Questions  |\n";
-		cout << "| 3. Categories |\n";
-		cout << "=================\n";
+		ifstream file("Statistic.txt");
+
+		if (!file.good())
+		{
+			cout << "Error with file\n";
+			return;
+		}
+		if (file.peek() == fstream::traits_type::eof())
+		{
+			cout << "File is empty\n";
+			return;
+		}
+
+		string category;
+		cout << "Input category what you want to see: ";
+		cin.ignore(cin.rdbuf()->in_avail());
+		getline(cin, category);
+
+		Statistic tmp(&User(), &Category());
+		bool isOne = false;
+
+		while (!file.eof())
+		{
+			file >> tmp;
+
+			if (tmp.categ->catName == category)
+			{
+				cout << tmp.who->GetFullName() << endl;
+				tmp.ShowStatWithoutName();
+				cout << endl;
+				isOne = true;
+			}
+		}
+
+		if (!isOne)
+			cout << "No one person don't goind this test\n";
+
 	}
 
 	/*void GoTest()
@@ -1197,20 +1514,375 @@ public:
 		cout << "Right in proc.: " << rightInProc << "%" << endl;
 	};*/
 
+	void MainAdminMenu()
+	{
+		// Change login
+		// Change password
 
+		// ShowAllUsers
+		// add new user
+		// dlete user
+		// edit user
+
+		// add qustion
+		// delete question
+		// edit quest
+
+		// add categories
+		// del categories
+		// rename categories
+
+		// show stat by cur person
+
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "================\n";
+			cout << "|1. Users      |\n";
+			cout << "|2. Quesions   |\n";
+			cout << "|3. Categories |\n";
+			cout << "|4. Statistic  |\n";
+			cout << "|5. Settings   |\n";
+			cout << "|0. Exit       |\n";
+			cout << "================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				UsersMenu();
+				break;
+
+			case 2:
+				QuestionsMenu();
+				break;
+
+			case 3:
+				CategoriesMenu();
+				break;
+
+			case 4:
+				StatisticMenu();
+				break;
+
+			case 5:
+				SettingsMenu();
+				break;
+
+			case 0:
+				return;
+
+			default:
+				cout << "Input right digit (0-5)\n";
+				break;
+			}
+
+		} while (choice != 0);
+	}
+
+	void UsersMenu()
+	{
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "====================\n";
+			cout << "|1. Show all users |\n";
+			cout << "|2. Add new user   |\n";
+			cout << "|3. Delete user    |\n";
+			cout << "|4. Edit user      |\n";
+			cout << "|0. Go back        |\n";
+			cout << "====================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				ShowUsers();
+				break;
+
+			case 2:
+				AddUser();
+				break;
+
+			case 3:
+				DeleteUser();
+				break;
+
+			case 4:
+				UserEdit();
+				break;
+
+			case 0:
+				return;
+
+			default:
+				cout << "Input right digit (0-4)\n";
+				break;
+			}
+			system("pause");
+
+		} while (choice != 0);
+	}
+	void QuestionsMenu()
+	{
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "========================\n";
+			cout << "|1. Show all questions |\n";
+			cout << "|2. Add question       |\n";
+			cout << "|3. Delete question    |\n";
+			cout << "|4. Edit question      |\n";
+			cout << "|0. Go back            |\n";
+			cout << "========================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				Shows::ShowAllQuest(tests);
+				break;
+
+			case 2:
+				AddQuestAnsw();
+				break;
+
+			case 3:
+				DeleteQuestAnsw();
+				break;
+
+			case 4:
+				EditQuest();
+				break;
+
+			case 0:
+				return;
+
+			default:
+				cout << "Input right digit (0-4)\n";
+				break;
+			}
+
+			system("pause");
+
+		} while (choice != 0);
+	}
+	void CategoriesMenu()
+	{
+		int choice;
+
+		do
+		{
+			system("cls");
+			cout << "=========================\n";
+			cout << "|1. Show all categories |\n";
+			cout << "|2. Add category        |\n";
+			cout << "|3. Delete category     |\n";
+			cout << "|4. Rename category     |\n";
+			cout << "|0. Go back             |\n";
+			cout << "=========================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				Shows::ShowAllCategories(tests);
+				break;
+
+			case 2:
+				AddNewCategorie();
+				break;
+
+			case 3:
+				DeleteCateg();
+				break;
+
+			case 4:
+				RenameCateg();
+				break;
+
+			case 0:
+				return;
+
+			default:
+				cout << "Input right digit (0-4)\n";
+				break;
+			}
+
+			system("pause");
+
+		} while (choice != 0);
+
+	}
+	void StatisticMenu()
+	{
+
+	}
+	void SettingsMenu()
+	{
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "==========================\n";
+			cout << "|1. Edit admin login     |\n";
+			cout << "|2. Edit admin password  |\n";
+			cout << "|3. Load questions       |\n";
+			cout << "|4. Upload questions     |\n";
+			cout << "|5. Load users           |\n";
+			cout << "|6. Upload users         |\n";
+			cout << "|0. Go back              |\n";
+			cout << "==========================\n";
+			cout << "Input your choice: ";
+			cin >> choice;
+
+			switch (choice)
+			{
+			case 1:
+				WriteLogin();
+				break;
+
+			case 2:
+				WritePass();
+				break;
+
+			case 3:
+				break;
+			case 0:
+				return;
+			default:
+				cout << "Input right digit (0-6)\n";
+				break;
+			}
+
+			system("pause");
+
+		} while (choice != 0);
+	}
 };
+
+User* EntryAsUser(const vector<User>& users)
+{
+	system("cls");
+
+	if (users.empty())
+		throw logic_error("No one user in system");
+
+	string login, pass;
+	cout << "Input login: ";
+	CLEAR;
+	getline(cin, login);
+
+	User* tmp = nullptr;
+	bool isTrueLogin = false;
+	for (auto& i : users)
+	{
+		if (i.GetLogin() == login)
+		{
+			tmp = const_cast<User*>(&i);
+			isTrueLogin = true;
+			break;
+		}
+	}
+
+	if (!isTrueLogin)
+		throw logic_error("No one user with this login in system");
+
+	cout << "Input password: ";
+	CLEAR;
+	getline(cin, pass);
+
+	if (tmp->GetPass() == pass)
+	{
+		cout << "Login is succesfully\n";
+		cout << "Welcome " << tmp->GetFullName() << endl;
+		system("pause");
+		return tmp;
+	}
+
+	else
+		throw logic_error("Invalid password");
+}
+
+void EntryMenu()
+{
+	vector<User> users;
+	Test tests;
+	Admin admin(users, tests);
+
+	int choice;
+	do
+	{
+		system("cls");
+		cout << "===================\n";
+		cout << "|1. Sign up user  |\n";
+		cout << "|2. Sign in user  |\n";
+		cout << "|3. Sign in admin |\n";
+		cout << "|0. Exit          |\n";
+		cout << "===================\n";
+		cout << "Input your choose: ";
+		cin >> choice;
+
+		switch (choice)
+		{
+		case 1:
+			admin.AddUser();
+		system("pause");
+			break;
+
+		case 2:
+			try
+			{
+				User* user = EntryAsUser(users);
+				user->MainUserMenu(tests);
+			}
+
+			catch (const logic_error& ex)
+			{
+				cout << ex.what() << endl;
+				system("pause");
+				break;
+			}
+			break;
+
+		case 3:
+			if (admin.EntryAdmin())
+				admin.MainAdminMenu();
+
+			else
+				cout << "Authtification error\n";
+
+			system("pause");
+			break;
+
+		case 0:
+			cout << "Good bye\n";
+			return;
+
+		default:
+			cout << "Input right choice (0-3)\n";
+			break;
+		}
+
+	} while (choice != 0);
+}
 
 int main()
 {
 	srand(time(nullptr));
+	EntryMenu();
 
-	Admin kolya;
-	kolya.AddQuestAnsw();
-	
-	User user;
-	user.GoTest();
+	//User user;
+	//user.GoTest();
 
-	kolya.ShowStatisticByCurrentPeople();
+	//kolya.MainAdminMenu();
 
 	return 0;
 }
