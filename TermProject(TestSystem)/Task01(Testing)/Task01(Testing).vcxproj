@@ -145,6 +145,8 @@
     <ClCompile Include="TestAndQuestion.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="autoLoads.txt" />
+    <Text Include="Questions.txt" />
     <Text Include="Statistic.txt" />
     <Text Include="Users.txt" />
   </ItemGroup>
