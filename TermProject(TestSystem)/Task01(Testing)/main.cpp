@@ -96,16 +96,11 @@ struct QuestAnsw
 
 		return out;
 	}
-
-	friend class Admin;
-	friend class User;
-	friend class Shows;
-	friend class Founders;
 };
 
 class CurrentTest
 {
-public:
+private:
 	string testName;
 	vector<QuestAnsw> QA;
 
@@ -159,10 +154,10 @@ public:
 		return out;
 	}
 
-	//friend class Admin;
-	//friend class User;
-	//friend class Shows;
-	//friend class Founders;
+	friend class Admin;
+	friend class User;
+	friend class Shows;
+	friend class Founders;
 };
 
 class Category
@@ -195,10 +190,8 @@ public:
 	}
 
 	friend class Admin;
-	friend class User;
 	friend class Shows;
 	friend class Founders;
-	friend class Statistic;
 
 	friend ifstream& operator>>(ifstream& in, Category& cat)
 	{
@@ -266,7 +259,6 @@ public:
 	}
 
 	friend class Admin;
-	friend class User;
 	friend class Shows;
 	friend class Founders;
 
@@ -413,13 +405,26 @@ class User;
 class Founders
 {
 public:
-	static Category* GetCategoryByName(string catName, Test& const tests)
+	static Category* GetCategoryByName(string catName, Test& tests)
 	{
-		for (auto& i : tests.categories)
-			if (i.catName == catName)
-				return &i;
+		if (isdigit(catName[0]))
+		{
+			int index = atoi(catName.c_str()) - 1;
 
-		return nullptr;
+			if (index < 0 || index > tests.categories.size())
+				return nullptr;
+
+			return &tests.categories[index];
+		}
+		else
+		{
+
+			for (auto& i : tests.categories)
+				if (i.catName == catName)
+					return &i;
+
+			return nullptr;
+		}
 	}
 	static int GetCategIndex(const Test& tests)
 	{
@@ -441,11 +446,24 @@ public:
 	}
 	static int GetCategIndByName(string categorie, const Test& tests)
 	{
-		for (size_t i = 0; i < tests.categories.size(); i++)
-			if (tests.categories[i].catName == categorie)
-				return i;
+		if (isdigit(categorie[0]))
+		{
+			int index = atoi(categorie.c_str()) - 1;
 
-		return -1;
+			if (index < 0 || index > tests.categories.size())
+				throw logic_error("Invalid index");
+
+			return index;
+		}
+
+		else
+		{
+			for (size_t i = 0; i < tests.categories.size(); i++)
+				if (tests.categories[i].catName == categorie)
+					return i;
+
+			return -1;
+		}
 	}
 	static string GetCategoriesName(const Test& tests)
 	{
@@ -458,7 +476,7 @@ public:
 		}
 
 		cout << "Input category: ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, catName);
 
 		return catName;
@@ -502,27 +520,70 @@ public:
 
 	static CurrentTest* GetTestByName(string testName, Category* const cat)
 	{
-		for (auto& i : cat->testsInCat)
-			if (testName == i.testName)
-				return &i;
+		if (isdigit(testName[0]))
+		{
+			int index = atoi(testName.c_str()) - 1;
 
-		return nullptr;
+			if (index < 0 || index > cat->testsInCat.size())
+				return nullptr;
+
+			return &cat->testsInCat[index];
+		}
+
+		else
+		{
+			for (auto& i : cat->testsInCat)
+				if (testName == i.testName)
+					return &i;
+
+			return nullptr;
+		}
+	}
+	static CurrentTest* GetTestByInd(string testInd, Category* const cat)
+	{
+
 	}
 	static int GetTestIndByName(string testName, const Category& cat)
 	{
-		for (size_t i = 0; i < cat.testsInCat.size(); i++)
-			if (cat.testsInCat[i].testName == testName)
-				return i;
+		if (isdigit(testName[0]))
+		{
+			int index = atoi(testName.c_str()) - 1;
 
-		return -1;
+			if (index < 0 || index > cat.testsInCat.size())
+				throw logic_error("Invalid index");
+
+			return index;
+		}
+
+		else
+		{
+			for (size_t i = 0; i < cat.testsInCat.size(); i++)
+				if (cat.testsInCat[i].testName == testName)
+					return i;
+
+			return -1;
+		}
 	}
 	static int GetTestIndByName(string testName, const Category* cat)
 	{
-		for (size_t i = 0; i < cat->testsInCat.size(); i++)
-			if (cat->testsInCat[i].testName == testName)
-				return i;
+		if (isdigit(testName[0]))
+		{
+			int index = atoi(testName.c_str()) - 1;
 
-		return -1;
+			if (index < 0 || index > cat->testsInCat.size())
+				throw logic_error("Invalid index");
+
+			return index;
+		}
+
+		else
+		{
+			for (size_t i = 0; i < cat->testsInCat.size(); i++)
+				if (cat->testsInCat[i].testName == testName)
+					return i;
+
+			return -1;
+		}
 	}
 
 	static string FoundPersonByLogin(string login, vector<User> users);
@@ -568,7 +629,7 @@ public:
 class User;
 class Statistic
 {
-public:
+private:
 	bool* fullAnsw;
 	Category* categ;
 	CurrentTest* currTest;
@@ -595,14 +656,15 @@ public:
 
 	void ShowCategTitle()
 	{
-		cout << "Category name: " << categ->catName << endl;
+		cout << "Category name: " << categ->GetName() << endl;
 	}
 	void ShowTestTitle()
 	{
-		cout << "Test name: " << currTest->testName << endl;
+		cout << "Test name: " << currTest->GetName() << endl;
 	}
 
 	friend class User;
+	friend class Admin;
 };
 
 class User
@@ -776,7 +838,7 @@ public:
 			return;
 
 		string categoryName;
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		cout << "Input category: ";
 		getline(cin, categoryName);
 
@@ -784,7 +846,7 @@ public:
 
 		if (cat == nullptr)
 		{
-			cout << "Invalid cat title\n";
+			cout << "Invalid cat title or index\n";
 			system("pause");
 			return;
 		}
@@ -793,7 +855,7 @@ public:
 			return;
 
 		string testName;
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		cout << "Input test title: ";
 		getline(cin, testName);
 
@@ -801,7 +863,7 @@ public:
 
 		if (currTest == nullptr)
 		{
-			cout << "Invalid test title\n";
+			cout << "Invalid test title or index\n";
 			system("pause");
 			return;
 		}
@@ -953,7 +1015,7 @@ public:
 		{
 			file >> tmp;
 
-			if (tmp.whoLog == this->login && tmp.categ->catName == cat->catName)
+			if (tmp.whoLog == this->login && tmp.categ->GetName() == cat->GetName())
 			{
 				cout << "-----------\n";
 				isOne = true;
@@ -1126,15 +1188,6 @@ public:
 	}
 };
 
-string Founders::FoundPersonByLogin(string login, vector<User> users)
-{
-	for (auto& i : users)
-		if (i.GetLogin() == login)
-			return i.GetFullName();
-
-	return string("");
-}
-
 ifstream& operator>>(ifstream& in, Statistic& stat)
 {
 	string catTitle, currTitle, who;
@@ -1157,7 +1210,7 @@ ifstream& operator>>(ifstream& in, Statistic& stat)
 }
 ofstream& operator<<(ofstream& out, const Statistic& stat)
 {
-	out << stat.whoLog << endl << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categ->GetName() << endl << stat.currTest->testName << endl;
+	out << stat.whoLog << endl << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categ->GetName() << endl << stat.currTest->GetName() << endl;
 
 	return out;
 }
@@ -1587,7 +1640,7 @@ public:
 		{
 			system("cls");
 			cout << "Input login: ";
-			cin.ignore(cin.rdbuf()->in_avail());
+			CLEAR;
 			getline(cin, login);
 
 			try
@@ -1597,7 +1650,7 @@ public:
 				isTrue = true;
 			}
 
-			catch (const exception& ex)
+			catch (const std::exception& ex)
 			{
 				cout << ex.what() << endl;
 				system("pause");
@@ -1609,7 +1662,7 @@ public:
 		{
 			system("cls");
 			cout << "Input password: ";
-			cin.ignore(cin.rdbuf()->in_avail());
+			CLEAR;
 			getline(cin, pass);
 
 			try
@@ -1676,7 +1729,7 @@ public:
 			{
 			case 1:
 				cout << "Input new user full name: ";
-				cin.ignore(cin.rdbuf()->in_avail());
+				CLEAR;
 				getline(cin, tmp);
 				user.SetFullName(tmp);
 				cout << "Full name are succesfullt edit\n";
@@ -1684,7 +1737,7 @@ public:
 
 			case 2:
 				cout << "Input new user address: ";
-				cin.ignore(cin.rdbuf()->in_avail());
+				CLEAR;
 				getline(cin, tmp);
 				user.SetAddress(tmp);
 				cout << "Address are succesfullt edit\n";
@@ -1692,7 +1745,7 @@ public:
 
 			case 3:
 				cout << "Input new user number: ";
-				cin.ignore(cin.rdbuf()->in_avail());
+				CLEAR;
 				getline(cin, tmp);
 				user.SetNumber(tmp);
 				cout << "Number are succesfullt edit\n";
@@ -1718,10 +1771,19 @@ public:
 
 		string categorie;
 		cout << "Input category to that you want add new question (you can input new category): ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, categorie);
 
-		int nCategor = Founders::GetCategIndByName(categorie, tests);
+		int nCategor = -1;
+		try
+		{
+			nCategor = Founders::GetCategIndByName(categorie, tests);
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what() << endl;
+			return;
+		}
 		if (nCategor == -1)
 		{
 			cout << "No one category with title " << categorie << " will be create new category " << endl;
@@ -1734,10 +1796,20 @@ public:
 
 		string test;
 		cout << "Input test to that you want add new question (you want input new test): ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, test);
 
-		int nTest = Founders::GetTestIndByName(test, tests.categories[nCategor]);
+		int nTest = -1;
+		try
+		{
+			nTest = Founders::GetTestIndByName(test, tests.categories[nCategor]);
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what() << endl;
+			return;
+		}
+
 		if (nTest == -1)
 		{
 			cout << "No one test with title " << test << " will be create new test " << endl;
@@ -1748,7 +1820,7 @@ public:
 
 		string quest;
 		cout << "Input question: ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, quest);
 
 		string answers[4];
@@ -1785,7 +1857,7 @@ public:
 
 		string test;
 		cout << "Input test that quest you want to delete: ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, test);
 
 		CurrentTest* testPtr = Founders::GetTestByName(test, catName);
@@ -1826,7 +1898,7 @@ public:
 
 		string test;
 		cout << "Input test that quest you want to edit: ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, test);
 
 		CurrentTest* testPtr = Founders::GetTestByName(test, catName);
@@ -1881,7 +1953,7 @@ public:
 			{
 				string newQuest;
 				cout << "Input new question: ";
-				cin.ignore(cin.rdbuf()->in_avail());
+				CLEAR;
 				getline(cin, newQuest);
 
 				cout << "This test had quest: " << quest.question << endl;
@@ -1903,7 +1975,7 @@ public:
 
 				string newQuest;
 				cout << "Input new answer for this question: ";
-				cin.ignore(cin.rdbuf()->in_avail());
+				CLEAR;
 				getline(cin, newQuest);
 
 				quest.answers[index] = newQuest;
@@ -1938,12 +2010,27 @@ public:
 
 		string categorie;
 		cout << "Input category to that you want add test (you can input new category): ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, categorie);
 
-		int nCategor = Founders::GetCategIndByName(categorie, tests);
+		int nCategor = -1;
+		try
+		{
+			nCategor = Founders::GetCategIndByName(categorie, tests);
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what() << endl;
+			return;
+		}
+
 		if (nCategor == -1)
 		{
+			if (isdigit(categorie.front()))
+			{
+				cout << "Unresolved title (title can't start from digit)\n";
+				return;
+			}
 			cout << "No one category with title " << categorie << " will be create new category " << endl;
 			tests.categories.push_back(categorie);
 			nCategor = tests.categories.size() - 1;
@@ -1953,6 +2040,12 @@ public:
 		cout << "Input new title of test: ";
 		CLEAR;
 		getline(cin, test);
+
+		if (isdigit(test.front()))
+		{
+			cout << "Unresolved title (title can't start from digit)\n";
+			return;
+		}
 
 		tests.categories[nCategor].testsInCat.push_back(test);
 	}
@@ -1990,7 +2083,16 @@ public:
 		CLEAR;
 		getline(cin, test);
 
-		int nTest = Founders::GetTestIndByName(test, catPtr);
+		int nTest = -1;
+		try
+		{
+			nTest = Founders::GetTestIndByName(test, catPtr);
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what();
+			return;
+		}
 
 		if (nTest == -1)
 		{
@@ -2057,12 +2159,26 @@ public:
 	{
 		cout << "Input new category name: ";
 		string catName;
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, catName);
 
-		if (Founders::GetCategIndByName(catName, tests) != -1)
+		if (isdigit(catName.front()))
 		{
-			cout << "This categ name is exist\n";
+			cout << "Unresolved title (title can't start from digit)\n";
+			return;
+		}
+
+		try
+		{
+			if (Founders::GetCategIndByName(catName, tests) != -1)
+			{
+				cout << "This categ name is exist\n";
+				return;
+			}
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what() << endl;
 			return;
 		}
 
@@ -2072,10 +2188,19 @@ public:
 	{
 		cout << "Input category name: ";
 		string catName;
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, catName);
 
-		int index = Founders::GetCategIndByName(catName, tests);
+		int index;
+		try
+		{
+			index = Founders::GetCategIndByName(catName, tests);
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what() << endl;
+			return;
+		}
 
 		if (index == -1)
 		{
@@ -2089,10 +2214,19 @@ public:
 	{
 		cout << "Input old category name: ";
 		string catName;
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, catName);
 
-		int index = Founders::GetCategIndByName(catName, tests);
+		int index;
+		try
+		{
+			index = Founders::GetCategIndByName(catName, tests);
+		}
+		catch (const std::exception& ex)
+		{
+			cout << ex.what() << endl;
+			return;
+		}
 
 		if (index == -1)
 		{
@@ -2102,7 +2236,7 @@ public:
 
 		cout << "Input mews category name: ";
 		string newCatName;
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, newCatName);
 
 		tests.categories[index].catName = newCatName;
@@ -2129,7 +2263,7 @@ public:
 		string fullName;
 		cout << "WARNING! This is't all users, you can know user with other fullname\n";
 		cout << "What full name in person, which stat. you want to see: ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, fullName);
 
 		Statistic tmp(&Category(), &CurrentTest());
@@ -2172,7 +2306,7 @@ public:
 
 		string category;
 		cout << "Input category what you want to see: ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, category);
 
 		Statistic tmp(&Category(), &CurrentTest());
@@ -2215,7 +2349,7 @@ public:
 
 		string category;
 		cout << "Input category that have your need test (this is not all categories, you can know more): ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, category);
 
 		Category* catPtr = Founders::GetCategoryByName(category, tests);
@@ -2224,7 +2358,7 @@ public:
 
 		string test;
 		cout << "Input test that you want to see (this is not all tests, you can know more): ";
-		cin.ignore(cin.rdbuf()->in_avail());
+		CLEAR;
 		getline(cin, test);
 
 		Statistic tmp(&Category(), &CurrentTest());
@@ -2294,59 +2428,6 @@ public:
 
 		file << tests;
 	}
-
-	/*void GoTest()
-	{
-		if (!Shows::ShowCategories())
-			return;
-
-		string categoryName;
-		cin.ignore(cin.rdbuf()->in_avail());
-		cout << "Input category: ";
-		getline(cin, categoryName);
-
-		Category* cat = Founders::GetCategoryByName(categoryName);
-
-		if (cat == nullptr)
-		{
-			cout << "Invalid cat name\n";
-			return;
-		}
-
-		bool isTrue = false;
-		char userAnswer;
-		int size = cat->QA.size();
-		bool* stat = new bool[size];
-
-		int counter = 0;
-		for (auto& i : cat->QA)
-		{
-			cout << "Answer #" << counter + 1 << " / " << size << endl;
-
-			do
-			{
-				i.ShowQuestAnsw();
-
-				cout << "Input your answer: ";
-				cin >> userAnswer;
-			} while (!Founders::CheckAndConvertAnswer(userAnswer));
-
-			if (i.CheckAnsw(userAnswer))
-				stat[counter] = true;
-
-			else
-				stat[counter] = false;
-
-			counter++;
-		}
-
-		int nRight = Founders::CountRightAnsw(stat, size);
-		int rightInProc = (nRight * 100) / size;
-		cout << "RESULTS: \n";
-
-		cout << "Correct: " << nRight << endl;
-		cout << "Right in proc.: " << rightInProc << "%" << endl;
-	};*/
 
 	void MainAdminMenu()
 	{
@@ -2653,24 +2734,25 @@ public:
 		} while (choice != 0);
 	}
 	void SettingsMenu()
+
 	{
 		int choice;
 		do
 		{
 			system("cls");
-			cout << "===============================\n";
-			cout << "|1. Edit admin login          |\n";
-			cout << "|2. Edit admin password       |\n";
-			cout << "|3. Load questions            |\n";
-			cout << "|4. Upload questions          |\n";
-			cout << "|5. Load users                |\n";
-			cout << "|6. Upload users              |\n";
-			cout << "|7. Auto load users: " << std::setw(6) << boolalpha << ReadAutoUserLoad() << noboolalpha << "   |\n";
-			cout << "|8. Auto load question: " << std::setw(5) << boolalpha << ReadAutoQuestLoad() << noboolalpha << " |\n";
-			cout << "|9. Auto upload users: " << std::setw(5) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
+			cout << "==================================\n";
+			cout << "| 1. Edit admin login            |\n";
+			cout << "| 2. Edit admin password         |\n";
+			cout << "| 3. Load questions              |\n";
+			cout << "| 4. Upload questions            |\n";
+			cout << "| 5. Load users                  |\n";
+			cout << "| 6. Upload users                |\n";
+			cout << "| 7. Auto load users:       " << std::setw(4) << boolalpha << ReadAutoUserLoad() << noboolalpha << " |\n";
+			cout << "| 8. Auto load question: " << std::setw(7) << boolalpha << ReadAutoQuestLoad() << noboolalpha << " |\n";
+			cout << "| 9. Auto upload users: " << std::setw(8) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
 			cout << "|10. Auto upload question: " << std::setw(5) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
-			cout << "|0. Go back                   |\n";
-			cout << "===============================\n";
+			cout << "| 0. Go back                     |\n";
+			cout << "==================================\n";
 			cout << "Input your choice: ";
 			cin >> choice;
 
@@ -2730,6 +2812,14 @@ public:
 	}
 };
 
+string Founders::FoundPersonByLogin(string login, vector<User> users)
+{
+	for (auto& i : users)
+		if (i.GetLogin() == login)
+			return i.GetFullName();
+
+	return string("");
+}
 User* EntryAsUser(const vector<User>& users)
 {
 	system("cls");
@@ -2784,6 +2874,9 @@ void EntryMenu()
 	if (admin.ReadAutoQuestUpLoad())
 		admin.UpLoadAllTest();
 
+	admin.SettingsMenu();
+	system("pause");
+	system("cls");
 	int choice;
 	do
 	{
@@ -2849,26 +2942,8 @@ void EntryMenu()
 int main()
 {
 	srand(time(nullptr));
-	//EntryMenu();
-
-	//User user;
-	//user.GoTest();
-
-	//kolya.MainAdminMenu();
-
-	//vector<User> users;
-	//Test tests;
-	//Admin admin(users, tests);
-	//User user;
 
 	EntryMenu();
 
-	//admin.MainAdminMenu();
-	//admin.EditQuest();
-	//Shows::ShowAllQuest(tests);
-
-
-
 	return 0;
 }
-
