@@ -18,50 +18,5 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestAndQuestion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Helpers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Admin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Users.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="autoLoads.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="Questions.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="Statistic.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="TestAndQuestion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Helpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="User.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Admin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ThereAreNoLogin.dat">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="ThereAreNoPassword.dat">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

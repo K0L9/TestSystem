@@ -162,24 +162,6 @@ public:
 	friend class Founders;
 };
 
-string GetPassword()
-{
-	vector<char> password;
-
-	char c;
-
-	std::cout << "Input password: ";
-	while ((c = _getch()) != '\r')
-	{
-		password.push_back(c);
-		_putch('*');
-	}
-
-	string passStr(password.begin(), password.end());
-
-	return passStr;
-}
-
 class Category
 {
 private:
@@ -420,6 +402,25 @@ public:
 
 };
 
+string GetPassword(string message = "Input password: ")
+{
+	vector<char> password;
+
+	char c;
+
+	cout << message;
+	while ((c = _getch()) != '\r')
+	{
+		password.push_back(c);
+		_putch('*');
+	}
+
+	string passStr(password.begin(), password.end());
+
+	cout << endl;
+
+	return passStr;
+}
 class User;
 class Founders
 {
@@ -641,7 +642,6 @@ public:
 	}
 };
 
-class User;
 class Statistic
 {
 private:
@@ -1243,7 +1243,7 @@ public:
 
 		do
 		{
-			cout << "Input login: ";
+			cout << "Input new login: ";
 			CLEAR;
 			cin.getline(login, 100);
 
@@ -1303,9 +1303,9 @@ public:
 		char pass[100];
 		do
 		{
-			cout << "Input password: ";
 			CLEAR;
-			cin.getline(pass, 100);
+			string tmpPass = GetPassword("Input new password: ");
+			strcpy_s(pass, 100, tmpPass.c_str());
 
 			try
 			{
@@ -1389,14 +1389,10 @@ public:
 		}
 
 		system("cls");
-		cout << "------Entering------\n";
+		cout << "---Entering-admin---\n";
 
 		string login, pass;
-		cout << "Input login: ";
-		CLEAR;
-		getline(cin, login);
 		string loginInSys, passInSys;
-
 		try
 		{
 			loginInSys = ReadLogin();
@@ -1410,26 +1406,50 @@ public:
 			return false;
 		}
 
-		if (login != loginInSys)
+		cin.clear();
+		bool isTrueLogin = false;;
+
+		while (cin.good())
 		{
-			cout << "Invalid login\n";
-			system("pause");
-			system("cls");
-			return false;
+			cout << "Input login (Input CTRL + Z to go back): ";
+			CLEAR;
+			getline(cin, login);
+
+			if (login != loginInSys && cin.good())
+			{
+				cout << "Invalid login\n";
+				system("pause");
+				system("cls");
+			}
+
+			else if(login == loginInSys)
+			{
+				isTrueLogin = true;
+				break;
+			}
 		}
 
-		CLEAR;
-		pass = GetPassword();
+		cin.clear();
 
-		if (pass != passInSys)
-		{
-			cout << "Invalid password\n";
-			system("pause");
-			system("cls");
+		if (!isTrueLogin)
 			return false;
-		}
 
-		return true;
+		for (size_t i = 3; i > 0; i--)
+		{
+			CLEAR;
+			pass = GetPassword("Input password, you have " + to_string(i) + " tries more: " );
+
+			if (pass == passInSys)
+				return true;
+
+			else
+			{
+				cout << "Invalid password\n";
+				system("pause");
+				system("cls");
+			}
+		}
+			return false;
 	}
 
 	bool ReadAutoUserLoad()
@@ -1442,7 +1462,7 @@ public:
 			return 0;
 		}
 
-		bool tmp;
+		bool tmp = true;
 
 		file >> tmp;
 
@@ -1460,7 +1480,7 @@ public:
 
 		file.seekg(1);
 
-		bool tmp;
+		bool tmp = true;
 
 		file >> tmp;
 
@@ -1519,7 +1539,7 @@ public:
 
 	bool ReadAutoUserUpLoad()
 	{
-		ifstream file("Saves/Users.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1529,7 +1549,7 @@ public:
 
 		file.seekg(3);
 
-		bool tmp;
+		bool tmp = true;
 
 		file >> tmp;
 
@@ -1547,7 +1567,7 @@ public:
 
 		file.seekg(5);
 
-		bool tmp;
+		bool tmp = true;
 
 		file >> tmp;
 
@@ -2052,7 +2072,7 @@ public:
 			return;
 		}
 
-		if(isNew)
+		if (isNew)
 			tests.categories.push_back(categorie);
 
 		tests.categories[nCategor].testsInCat.push_back(test);
@@ -2415,6 +2435,8 @@ public:
 
 		User tmp;
 
+		users.clear();
+
 		while (file.peek() != fstream::traits_type::eof())
 		{
 			file >> tmp;
@@ -2446,6 +2468,8 @@ public:
 			system("cls");
 			return;
 		}
+
+		tests.categories.clear();
 
 		file >> tests;
 	}
@@ -2764,67 +2788,69 @@ public:
 		} while (choice != 0);
 	}
 	void SettingsMenu()
-
 	{
 		int choice;
 		do
 		{
 			system("cls");
-			cout << "==================================\n";
-			cout << "| 1. Edit admin login            |\n";
-			cout << "| 2. Edit admin password         |\n";
-			cout << "| 3. Load questions              |\n";
-			cout << "| 4. Upload questions            |\n";
-			cout << "| 5. Load users                  |\n";
-			cout << "| 6. Upload users                |\n";
-			cout << "| 7. Auto load users:       " << std::setw(4) << boolalpha << ReadAutoUserLoad() << noboolalpha << " |\n";
-			cout << "| 8. Auto load question: " << std::setw(7) << boolalpha << ReadAutoQuestLoad() << noboolalpha << " |\n";
-			cout << "| 9. Auto upload users: " << std::setw(8) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
-			cout << "|10. Auto upload question: " << std::setw(5) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
-			cout << "| 0. Go back                     |\n";
-			cout << "==================================\n";
+			cout << "=================================\n";
+			cout << "|1. Edit admin entry data       |\n";
+			cout << "|2. Load questions              |\n";
+			cout << "|3. Upload questions            |\n";
+			cout << "|4. Load users                  |\n";
+			cout << "|5. Upload users                |\n";
+			cout << "|6. Auto load users:      " << std::setw(5) << boolalpha << ReadAutoUserLoad() << noboolalpha << " |\n";
+			cout << "|7. Auto load question: " << std::setw(7) << boolalpha << ReadAutoQuestLoad() << noboolalpha << " |\n";
+			cout << "|8. Auto upload users: " << std::setw(8) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
+			cout << "|9. Auto upload question: " << std::setw(5) << boolalpha << ReadAutoQuestUpLoad() << noboolalpha << " |\n";
+			cout << "|0. Go back                     |\n";
+			cout << "=================================\n";
 			cout << "Input your choice: ";
 			cin >> choice;
 
 			switch (choice)
 			{
 			case 1:
-				WriteLogin();
+				cout << "To change admin login you input right pass and login\n";
+				system("pause");
+				system("cls");
+
+				if (EntryAdmin())
+					AdminAuthorizeEditMenu();
+				else
+					cout << "Authorize error\n";
+
 				break;
 
 			case 2:
-				WritePass();
-				break;
-
-			case 3:
 				LoadAllTest();
 				break;
 
-			case 4:
+			case 3:
 				UpLoadAllTest();
 				break;
 
-			case 5:
+			case 4:
 				LoadAllUsers();
 				break;
 
-			case 6:
+			case 5:
 				UpLoadAllUsers();
 				break;
 
-			case 7:
+			case 6:
 				SwitchAutoUserLoad();
 				break;
 
-			case 8:
+			case 7:
 				SwitchAutoQuestLoad();
 				break;
 
-			case 9:
+			case 8:
 				SwitchAutoUserUpLoad();
 				break;
 
-			case 10:
+			case 9:
 				SwitchAutoQuestUpLoad();
 				break;
 
@@ -2835,6 +2861,39 @@ public:
 				cout << "Input right digit (0-6)\n";
 				break;
 			}
+
+			system("pause");
+
+		} while (choice != 0);
+	}
+	void AdminAuthorizeEditMenu()
+	{
+		int choice;
+		do
+		{
+			system("cls");
+			cout << "==============\n";
+			cout << "|1. Login    |\n";
+			cout << "|2. Password |\n";
+			cout << "|0. Exit     |\n";
+			cout << "==============\n";
+			cout << "Input what you want to edit: ";
+			cin >> choice;
+
+			if (choice == 1)
+				WriteLogin();
+
+			else if (choice == 2)
+				WritePass();
+
+			else if (choice == 0)
+			{
+				cout << "Data are succesfully changed\n";
+				return;
+			}
+
+			else
+				cout << "Input right digit (0-2)\n";
 
 			system("pause");
 
@@ -2858,38 +2917,60 @@ User* EntryAsUser(const vector<User>& users)
 		throw logic_error("No one user in system");
 
 	string login, pass;
-	cout << "Input login: ";
-	CLEAR;
-	getline(cin, login);
-
 	User* tmp = nullptr;
 	bool isTrueLogin = false;
-	for (auto& i : users)
+	cin.clear();
+	while (cin.good())
 	{
-		if (i.GetLogin() == login)
+		system("cls");
+		cout << "Input login (Input CTRL + Z to go back): ";
+		CLEAR;
+		getline(cin, login);
+
+		for (auto& i : users)
 		{
-			tmp = const_cast<User*>(&i);
-			isTrueLogin = true;
-			break;
+			if (i.GetLogin() == login)
+			{
+				tmp = const_cast<User*>(&i);
+				isTrueLogin = true;
+				break;
+			}
 		}
+
+		if (!isTrueLogin && cin.good())
+		{
+			cout << "No one user with this login in system\n";
+			system("pause");
+		}
+
+		else
+			break;
 	}
+	cin.clear();
 
 	if (!isTrueLogin)
-		throw logic_error("No one user with this login in system");
+		throw - 1;
 
-	CLEAR;
-	pass = GetPassword();
-
-	if (tmp->GetPass() == pass)
+	for (size_t i = 3; i > 0; i--)
 	{
-		cout << "Login is succesfully\n";
-		cout << "Welcome " << tmp->GetFullName() << endl;
+		CLEAR;
+		pass = GetPassword("Input password, you have " + to_string(i) + " tries more: ");
+
+		if (tmp->GetPass() == pass)
+		{
+			cout << "Login is succesfully\n";
+			cout << "Welcome " << tmp->GetFullName() << endl;
+			system("pause");
+			return tmp;
+		}
+
+		cout << "Invalid password\n";
 		system("pause");
-		return tmp;
+		system("cls");
 	}
 
-	else
-		throw logic_error("Invalid password");
+	throw  logic_error("Authorization error");
+
 }
 
 void EntryMenu()
@@ -2934,6 +3015,10 @@ void EntryMenu()
 			{
 				cout << ex.what() << endl;
 				system("pause");
+				break;
+			}
+			catch (...)
+			{
 				break;
 			}
 			break;
