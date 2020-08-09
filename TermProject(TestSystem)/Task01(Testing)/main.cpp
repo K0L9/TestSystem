@@ -6,6 +6,8 @@
 #include <iomanip>
 #include <algorithm>
 
+#include <conio.h>
+
 using namespace std;
 #define CLEAR cin.ignore(cin.rdbuf()->in_avail())
 
@@ -160,6 +162,24 @@ public:
 	friend class Founders;
 };
 
+string GetPassword()
+{
+	vector<char> password;
+
+	char c;
+
+	std::cout << "Input password: ";
+	while ((c = _getch()) != '\r')
+	{
+		password.push_back(c);
+		_putch('*');
+	}
+
+	string passStr(password.begin(), password.end());
+
+	return passStr;
+}
+
 class Category
 {
 private:
@@ -261,7 +281,6 @@ public:
 	friend class Admin;
 	friend class Shows;
 	friend class Founders;
-
 };
 
 class Shows
@@ -451,7 +470,7 @@ public:
 			int index = atoi(categorie.c_str()) - 1;
 
 			if (index < 0 || index > tests.categories.size())
-				throw logic_error("Invalid index");
+				throw logic_error("Invalid index or unresolved new title");
 
 			return index;
 		}
@@ -539,10 +558,6 @@ public:
 			return nullptr;
 		}
 	}
-	static CurrentTest* GetTestByInd(string testInd, Category* const cat)
-	{
-
-	}
 	static int GetTestIndByName(string testName, const Category& cat)
 	{
 		if (isdigit(testName[0]))
@@ -550,7 +565,7 @@ public:
 			int index = atoi(testName.c_str()) - 1;
 
 			if (index < 0 || index > cat.testsInCat.size())
-				throw logic_error("Invalid index");
+				throw logic_error("Invalid index or unresolved new title");
 
 			return index;
 		}
@@ -571,7 +586,7 @@ public:
 			int index = atoi(testName.c_str()) - 1;
 
 			if (index < 0 || index > cat->testsInCat.size())
-				throw logic_error("Invalid index");
+				throw logic_error("Invalid index or unresolved new title");
 
 			return index;
 		}
@@ -631,22 +646,37 @@ class Statistic
 {
 private:
 	bool* fullAnsw;
-	Category* categ;
-	CurrentTest* currTest;
+	string categTitle;
+	string currTestTitle;
 	string whoLog;
 	int rightRes;
 	double rightInProc;
 	int size;
 
 public:
-	Statistic(Category* categ = nullptr, CurrentTest* currTest = nullptr, string whoLog = "", bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0, int size = 0)
-		: whoLog(whoLog), categ(categ), currTest(currTest), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc), size(size)
+	Statistic(string categTitle = "", string currTestTitle = "", string whoLog = "", bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0, int size = 0)
+		: whoLog(whoLog), categTitle(categTitle), currTestTitle(currTestTitle), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc), size(size)
 	{
 	}
 
-	friend ofstream& operator<<(ofstream& out, const Statistic& stat);
+	friend ofstream& operator<<(ofstream& out, const Statistic& stat)
+	{
+		out << stat.whoLog << endl << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categTitle << endl << stat.currTestTitle << endl;
 
-	friend ifstream& operator>>(ifstream& in, Statistic& stat);
+		return out;
+	}
+
+	friend ifstream& operator>>(ifstream& in, Statistic& stat)
+	{
+		getline(in, stat.whoLog);
+		in >> stat.rightRes;
+		in >> stat.rightInProc;
+		in >> stat.size;
+		getline(in, stat.categTitle);
+		getline(in, stat.currTestTitle);
+
+		return in;
+	}
 
 	void ShowStat()
 	{
@@ -656,11 +686,11 @@ public:
 
 	void ShowCategTitle()
 	{
-		cout << "Category name: " << categ->GetName() << endl;
+		cout << "Category name: " << categTitle << endl;
 	}
 	void ShowTestTitle()
 	{
-		cout << "Test name: " << currTest->GetName() << endl;
+		cout << "Test name: " << currTestTitle << endl;
 	}
 
 	friend class User;
@@ -898,18 +928,18 @@ public:
 		int nRight = Founders::CountRightAnsw(stat, size);
 		double rightInProc = (double)(nRight * 100) / size;
 
-		Statistic fullStat{ cat, currTest, this->login, stat, nRight, rightInProc, size };
+		Statistic fullStat{ cat->GetName(), currTest->GetName(), this->login, stat, nRight, rightInProc, size };
 
 		cout << "RESULTS: \n";
 
 		fullStat.ShowStat();
 		system("pause");
 
-		ofstream file("Statistic.txt", ios_base::app);
+		ofstream file("Saves/Statistic.txt", ios_base::app);
 
 		if (!file.good())
 		{
-			cout << "Error with statistic.txt file\n";
+			cout << "Error with Saves/Statistic.txt file\n";
 			system("pause");
 			return;
 		}
@@ -956,14 +986,14 @@ public:
 
 	bool ShowPersonStat()
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 		if (!file.good())
 		{
 			cout << "Error with file\n";
 			return false;
 		}
 
-		Statistic tmp{ &Category(), &CurrentTest() };
+		Statistic tmp{};
 
 		bool isOne = false;
 
@@ -999,14 +1029,14 @@ public:
 	}
 	void SeeOlderByCurrPersonByCateg(const Category* const cat)
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 		if (!file.good())
 		{
 			cout << "Error with file\n";
 			return;
 		}
 
-		Statistic tmp{ &Category(), &CurrentTest() };
+		Statistic tmp{};
 
 		bool isOne = false;
 		bool isFirst = false;
@@ -1015,7 +1045,7 @@ public:
 		{
 			file >> tmp;
 
-			if (tmp.whoLog == this->login && tmp.categ->GetName() == cat->GetName())
+			if (tmp.whoLog == this->login && tmp.categTitle == cat->GetName())
 			{
 				cout << "-----------\n";
 				isOne = true;
@@ -1032,7 +1062,7 @@ public:
 	}
 	void SeeOlderByCurrPersonByTest(const CurrentTest* const cat)
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 		if (!file.good())
 		{
 			cout << "Error with file\n";
@@ -1040,7 +1070,7 @@ public:
 			return;
 		}
 
-		Statistic tmp{ &Category(), &CurrentTest() };
+		Statistic tmp{};
 
 		bool isOne = false;
 
@@ -1048,7 +1078,7 @@ public:
 		{
 			file >> tmp;
 
-			if (tmp.whoLog == this->login && tmp.currTest->testName == cat->testName)
+			if (tmp.whoLog == this->login && tmp.currTestTitle == cat->testName)
 			{
 				cout << "-----------\n";
 				isOne = true;
@@ -1064,7 +1094,7 @@ public:
 	}
 	void SeeResultsByOtherPeople(const CurrentTest* const cat)
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 		if (!file.good())
 		{
 			cout << "Error with file\n";
@@ -1072,14 +1102,14 @@ public:
 			return;
 		}
 
-		Statistic tmp{ &Category(), &CurrentTest() };
+		Statistic tmp{};
 
 		bool isOne = false;
 
 		while (file.peek() != ifstream::traits_type::eof())
 		{
 			file >> tmp;
-			if (tmp.currTest->testName == cat->testName)
+			if (tmp.currTestTitle == cat->testName)
 			{
 				cout << "-----------\n";
 				isOne = true;
@@ -1188,33 +1218,6 @@ public:
 	}
 };
 
-ifstream& operator>>(ifstream& in, Statistic& stat)
-{
-	string catTitle, currTitle, who;
-	getline(in, stat.whoLog);
-	in >> stat.rightRes;
-	in >> stat.rightInProc;
-	in >> stat.size;
-	getline(in, catTitle);
-	getline(in, currTitle);
-
-	if (catTitle[0] == ' ')
-		catTitle.erase(0, 1);
-	if (currTitle[0] == ' ')
-		currTitle.erase(0, 1);
-
-	stat.categ->SetName(catTitle);
-	stat.currTest->SetName(currTitle);
-
-	return in;
-}
-ofstream& operator<<(ofstream& out, const Statistic& stat)
-{
-	out << stat.whoLog << endl << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categ->GetName() << endl << stat.currTest->GetName() << endl;
-
-	return out;
-}
-
 class Admin
 {
 private:
@@ -1230,7 +1233,7 @@ public:
 
 	void WriteLogin()
 	{
-		ofstream file("ThereAreNoLogin.dat", ios_base::binary || ios::app);
+		ofstream file("Saves/ThereAreNoLogin.dat", ios_base::binary || ios::app);
 
 		if (!file.good())
 			throw logic_error("Error with file");
@@ -1270,7 +1273,7 @@ public:
 	}
 	string ReadLogin()
 	{
-		ifstream file("ThereAreNoLogin.dat", ios_base::binary);
+		ifstream file("Saves/ThereAreNoLogin.dat", ios_base::binary);
 
 		if (!file.good())
 			throw logic_error("Error with file");
@@ -1291,7 +1294,7 @@ public:
 
 	void WritePass()
 	{
-		ofstream file("ThereAreNoPassword.dat", ios_base::binary || ios::app);
+		ofstream file("Saves/ThereAreNoPassword.dat", ios_base::binary || ios::app);
 
 		if (!file.good())
 			throw logic_error("Error with file");
@@ -1331,7 +1334,7 @@ public:
 	}
 	string ReadPass()
 	{
-		ifstream file("ThereAreNoPassword.dat", ios_base::binary);
+		ifstream file("Saves/ThereAreNoPassword.dat", ios_base::binary);
 
 		if (!file.good())
 			throw logic_error("Error with file");
@@ -1352,7 +1355,7 @@ public:
 
 	bool IsFirst()
 	{
-		ifstream fileLog("ThereAreNoLogin.dat");
+		ifstream fileLog("Saves/ThereAreNoLogin.dat");
 		if (fileLog.peek() == ifstream::traits_type::eof())
 		{
 			fileLog.close();
@@ -1415,9 +1418,8 @@ public:
 			return false;
 		}
 
-		cout << "Input password: ";
 		CLEAR;
-		getline(cin, pass);
+		pass = GetPassword();
 
 		if (pass != passInSys)
 		{
@@ -1432,7 +1434,7 @@ public:
 
 	bool ReadAutoUserLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1448,7 +1450,7 @@ public:
 	}
 	bool ReadAutoQuestLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1466,7 +1468,7 @@ public:
 	}
 	void SwitchAutoQuestLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1485,13 +1487,13 @@ public:
 
 		file.close();
 
-		ofstream file1("autoLoads.txt");
+		ofstream file1("Saves/autoLoads.txt");
 
 		file1 << tmp << " " << tmp1 << " " << tmp2 << " " << tmp3;
 	}
 	void SwitchAutoUserLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1510,14 +1512,14 @@ public:
 
 		file.close();
 
-		ofstream file1("autoLoads.txt");
+		ofstream file1("Saves/autoLoads.txt");
 
 		file1 << tmp << " " << tmp1 << " " << tmp2 << " " << tmp3;
 	}
 
 	bool ReadAutoUserUpLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/Users.txt");
 
 		if (!file.good())
 		{
@@ -1535,7 +1537,7 @@ public:
 	}
 	bool ReadAutoQuestUpLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1553,7 +1555,7 @@ public:
 	}
 	void SwitchAutoQuestUpLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1574,13 +1576,13 @@ public:
 
 		file.close();
 
-		ofstream file1("autoLoads.txt");
+		ofstream file1("Saves/autoLoads.txt");
 
 		file1 << tmp << " " << tmp1 << " " << tmp2 << " " << tmp3;
 	}
 	void SwitchAutoUserUpLoad()
 	{
-		ifstream file("autoLoads.txt");
+		ifstream file("Saves/autoLoads.txt");
 
 		if (!file.good())
 		{
@@ -1601,7 +1603,7 @@ public:
 
 		file.close();
 
-		ofstream file1("autoLoads.txt");
+		ofstream file1("Saves/autoLoads.txt");
 
 		file1 << tmp << " " << tmp1 << " " << tmp2 << " " << tmp3;
 	}
@@ -1661,9 +1663,8 @@ public:
 		do
 		{
 			system("cls");
-			cout << "Input password: ";
 			CLEAR;
-			getline(cin, pass);
+			pass = GetPassword();
 
 			try
 			{
@@ -1795,7 +1796,7 @@ public:
 			cout << "No one tests in this categ yet\n";
 
 		string test;
-		cout << "Input test to that you want add new question (you want input new test): ";
+		cout << "Input test to that you want add new question (you can input new test, it will be create): ";
 		CLEAR;
 		getline(cin, test);
 
@@ -2024,16 +2025,19 @@ public:
 			return;
 		}
 
+		bool isNew = false;
+
 		if (nCategor == -1)
 		{
+			isNew = true;
+
 			if (isdigit(categorie.front()))
 			{
 				cout << "Unresolved title (title can't start from digit)\n";
 				return;
 			}
 			cout << "No one category with title " << categorie << " will be create new category " << endl;
-			tests.categories.push_back(categorie);
-			nCategor = tests.categories.size() - 1;
+			nCategor = tests.categories.size();
 		}
 
 		string test;
@@ -2041,11 +2045,15 @@ public:
 		CLEAR;
 		getline(cin, test);
 
+
 		if (isdigit(test.front()))
 		{
 			cout << "Unresolved title (title can't start from digit)\n";
 			return;
 		}
+
+		if(isNew)
+			tests.categories.push_back(categorie);
 
 		tests.categories[nCategor].testsInCat.push_back(test);
 	}
@@ -2186,6 +2194,12 @@ public:
 	}
 	void DeleteCateg()
 	{
+		if (!Shows::ShowAllCategories(tests))
+		{
+			cout << "No one categories\n";
+			return;
+		}
+
 		cout << "Input category name: ";
 		string catName;
 		CLEAR;
@@ -2245,7 +2259,7 @@ public:
 	//Statistic
 	void ShowStatisticByCurrentPeople()
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 
 		if (!file.good())
 		{
@@ -2266,7 +2280,7 @@ public:
 		CLEAR;
 		getline(cin, fullName);
 
-		Statistic tmp(&Category(), &CurrentTest());
+		Statistic tmp{};
 		bool isOne = false;
 
 		while (!file.eof())
@@ -2289,7 +2303,7 @@ public:
 	}
 	void ShowStatisticByCurrentCategory()
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 
 		if (!file.good())
 		{
@@ -2309,14 +2323,14 @@ public:
 		CLEAR;
 		getline(cin, category);
 
-		Statistic tmp(&Category(), &CurrentTest());
+		Statistic tmp{};
 		bool isOne = false;
 
 		while (!file.eof())
 		{
 			file >> tmp;
 
-			if (tmp.categ->catName == category)
+			if (tmp.categTitle == category)
 			{
 				cout << "Who: " << Founders::FoundPersonByLogin(tmp.whoLog, users) << endl;
 				tmp.ShowTestTitle();
@@ -2332,7 +2346,7 @@ public:
 	}
 	void ShowStatisticByCurrentTest()
 	{
-		ifstream file("Statistic.txt");
+		ifstream file("Saves/Statistic.txt");
 
 		if (!file.good())
 		{
@@ -2361,7 +2375,7 @@ public:
 		CLEAR;
 		getline(cin, test);
 
-		Statistic tmp(&Category(), &CurrentTest());
+		Statistic tmp{};
 		bool isOne = false;
 
 		cout << "Test: " << category << endl;
@@ -2369,7 +2383,7 @@ public:
 		{
 			file >> tmp;
 
-			if (tmp.currTest->testName == test && tmp.categ->GetName() == category)
+			if (tmp.currTestTitle == test && tmp.categTitle == category)
 			{
 				cout << "Who: " << Founders::FoundPersonByLogin(tmp.whoLog, users);
 				tmp.ShowStat();
@@ -2386,10 +2400,18 @@ public:
 	//Loads
 	void UpLoadAllUsers()
 	{
-		ifstream file("Users.txt");
+		ifstream file("Saves/Users.txt");
 
 		if (!file.good())
 			return;
+
+		if (file.peek() == ifstream::traits_type::eof())
+		{
+			cout << "WARNING! No one test in file\n";
+			system("pause");
+			system("cls");
+			return;
+		}
 
 		User tmp;
 
@@ -2402,7 +2424,7 @@ public:
 	}
 	void LoadAllUsers()
 	{
-		ofstream file("Users.txt");
+		ofstream file("Saves/Users.txt");
 
 		if (!file.good())
 			return;
@@ -2412,16 +2434,24 @@ public:
 	}
 	void UpLoadAllTest()
 	{
-		ifstream file("Questions.txt");
+		ifstream file("Saves/Questions.txt");
 
 		if (!file.good())
 			return;
+
+		if (file.peek() == ifstream::traits_type::eof())
+		{
+			cout << "WARNING! No one test in file\n";
+			system("pause");
+			system("cls");
+			return;
+		}
 
 		file >> tests;
 	}
 	void LoadAllTest()
 	{
-		ofstream file("Questions.txt");
+		ofstream file("Saves/Questions.txt");
 
 		if (!file.good())
 			return;
@@ -2847,9 +2877,8 @@ User* EntryAsUser(const vector<User>& users)
 	if (!isTrueLogin)
 		throw logic_error("No one user with this login in system");
 
-	cout << "Input password: ";
 	CLEAR;
-	getline(cin, pass);
+	pass = GetPassword();
 
 	if (tmp->GetPass() == pass)
 	{
@@ -2874,9 +2903,6 @@ void EntryMenu()
 	if (admin.ReadAutoQuestUpLoad())
 		admin.UpLoadAllTest();
 
-	admin.SettingsMenu();
-	system("pause");
-	system("cls");
 	int choice;
 	do
 	{

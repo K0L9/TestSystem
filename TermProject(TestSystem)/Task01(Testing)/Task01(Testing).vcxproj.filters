@@ -29,9 +29,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Statistic.txt">
-      <Filter>Source Files</Filter>
-    </Text>
     <Text Include="Users.txt">
       <Filter>Source Files</Filter>
     </Text>
@@ -39,6 +36,9 @@
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="Questions.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Statistic.txt">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>
