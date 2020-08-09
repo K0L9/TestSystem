@@ -15,6 +15,8 @@ struct QuestAnsw
 	string answers[4];
 	int indexCorrect;
 
+	QuestAnsw() = default;
+
 	QuestAnsw(string quest, string* answers, int correct)
 		:question(quest), indexCorrect(correct)
 	{
@@ -22,6 +24,19 @@ struct QuestAnsw
 			this->answers[i] = answers[i];
 	}
 
+	void SetQuest(string quest)
+	{
+		this->question = quest;
+	}
+	void SetAnswers(string* answers)
+	{
+		for (size_t i = 0; i < 4; i++)
+			this->answers[i] = answers[i];
+	}
+	void SetInd(int ind)
+	{
+		this->indexCorrect = ind;
+	}
 	string GetTrueAnswer()const
 	{
 		return answers[indexCorrect];
@@ -40,6 +55,46 @@ struct QuestAnsw
 	bool CheckAnsw(char answer) const
 	{
 		return answer - 49 == indexCorrect;
+	}
+
+	friend ifstream& operator>>(ifstream& in, QuestAnsw& cat)
+	{
+		string quest;
+		string* answers = new string[4];
+		int rnd;
+		char index;
+
+		getline(in, quest);
+
+		for (size_t i = 0; i < 4; i++)
+			getline(in, answers[i]);
+
+		in >> rnd;
+		in >> index;
+
+		in.ignore();
+
+		cat.SetQuest(quest);
+		cat.SetInd(index - rnd);
+		cat.SetAnswers(answers);
+
+		delete[] answers;
+
+		return in;
+	}
+	friend ofstream& operator<<(ofstream& out, QuestAnsw& cat)
+	{
+		out << cat.question << endl;
+
+		for (size_t i = 0; i < 4; i++)
+			out << cat.answers[i] << endl;
+
+		int rnd = rand() % 100;
+		char indToWr = cat.indexCorrect + rnd;
+
+		out << rnd << " " << indToWr << endl;
+
+		return out;
 	}
 
 	friend class Admin;
@@ -66,15 +121,42 @@ public:
 	{
 		this->testName = testName;
 	}
+	string GetName()
+	{
+		return this->testName;
+	}
 
 	friend ifstream& operator>>(ifstream& in, CurrentTest& currTest)
 	{
-		getline(in, currTest.testName);
+		int count;
+		in >> count;
 
-		if (currTest.testName[0] == ' ')
-			currTest.testName.erase(0, 1);
+		string testName;
+
+		in.ignore();
+		getline(in, testName);
+
+		currTest.SetName(testName);
+
+
+		for (size_t i = 0; i < count; i++)
+		{
+			QuestAnsw tmp;
+			in >> tmp;
+			currTest.QA.push_back(tmp);
+		}
 
 		return in;
+	}
+	friend ofstream& operator<<(ofstream& out, CurrentTest& currTest)
+	{
+		out << currTest.QA.size() << endl;
+		out << currTest.testName << endl;
+
+		for (auto& i : currTest.QA)
+			out << i;
+
+		return out;
 	}
 
 	//friend class Admin;
@@ -103,6 +185,10 @@ public:
 
 	}
 
+	void SetName(string catName)
+	{
+		this->catName = catName;
+	}
 	string GetName() const
 	{
 		return catName;
@@ -116,12 +202,35 @@ public:
 
 	friend ifstream& operator>>(ifstream& in, Category& cat)
 	{
-		getline(in, cat.catName);
+		int count;
+		in >> count;
 
-		if (cat.catName[0] == ' ')
-			cat.catName.erase(0, 1);
+		string catName;
+
+		in.ignore();
+		getline(in, catName);
+		cat.SetName(catName);
+
+
+		for (size_t i = 0; i < count; i++)
+		{
+			CurrentTest tmp;
+			in >> tmp;
+			cat.testsInCat.push_back(tmp);
+		}
 
 		return in;
+	}
+	friend ofstream& operator<<(ofstream& out, Category& cat)
+	{
+		out << cat.testsInCat.size() << endl;
+
+		out << cat.catName << endl;
+
+		for (auto& i : cat.testsInCat)
+			out << i;
+
+		return out;
 	}
 };
 
@@ -131,33 +240,41 @@ private:
 	vector <Category> categories;
 public:
 
+	friend ifstream& operator>>(ifstream& in, Test& test)
+	{
+		int count;
+		in >> count;
+
+
+		for (size_t i = 0; i < count; i++)
+		{
+			Category tmp;
+			in >> tmp;
+			test.categories.push_back(tmp);
+		}
+
+		return in;
+	}
+	friend ofstream& operator<<(ofstream& out, Test& test)
+	{
+		out << test.categories.size() << endl;
+
+		for (auto& i : test.categories)
+			out << i;
+
+		return out;
+	}
+
 	friend class Admin;
 	friend class User;
 	friend class Shows;
 	friend class Founders;
 
 };
-//Test test;
 
 class Shows
 {
 public:
-	static bool ShowCategories(const Test& tests)
-	{
-		if (tests.categories.empty())
-		{
-			cout << "Ask admin to add categories\n";
-			return false;
-		}
-
-		int counter = 1;
-
-		for (auto& i : tests.categories)
-			cout << "#" << counter++ << " " << i.catName << endl;
-
-		return true;
-	}
-
 	static bool ShowAllCategories(const Test& tests)
 	{
 		if (tests.categories.empty())
@@ -166,6 +283,8 @@ public:
 		int counter = 0;
 		for (auto& i : tests.categories)
 			cout << "#" << ++counter << " " << i.catName << endl;
+
+		return true;
 	}
 	static bool ShowCurrentCategorie(const Category* const cat)
 	{
@@ -183,9 +302,11 @@ public:
 
 		cout << "Category: " << cat->catName << endl;
 
+		int counter = 1;
+
 		for (auto& i : cat->testsInCat)
 		{
-			cout << "Test: " << i.testName << endl;
+			cout << "Test #" << counter++ << " :" << i.testName << endl;
 			for (auto& j : i.QA)
 			{
 				cout << "\t Question: " << j.question << endl;
@@ -200,14 +321,15 @@ public:
 	}
 	static void ShowAllQuest(const Test& tests)
 	{
-		int counter = 0;
+		int counter = 0, counter1 = 0;
 		for (auto& i : tests.categories)
 		{
 			cout << "Category #" << ++counter << " " << i.catName << "\t( ";
 			cout << "This category have: " << i.testsInCat.size() << " tests )\n";
+			counter1 = 0;
 			for (auto& j : i.testsInCat)
 			{
-				cout << "\tTest: " << j.testName << "\t( ";
+				cout << "\tTest # " << ++counter1 << " :" << j.testName << "\t( ";
 				cout << "This test have: " << j.QA.size() << " questions )\n";
 				for (auto& l : j.QA)
 				{
@@ -261,7 +383,7 @@ public:
 		cout << "Category: " << cat->catName << endl;
 
 		for (auto& i : cat->testsInCat)
-			cout << "\tTest " << "#" << counter++ << " " << i.testName << endl;
+			cout << "\tTest " << "#" << counter++ << " :" << i.testName << endl;
 
 		cout << endl;
 
@@ -301,7 +423,7 @@ public:
 	}
 	static int GetCategIndex(const Test& tests)
 	{
-		if (!Shows::ShowCategories(tests))
+		if (!Shows::ShowAllCategories(tests))
 			return -1;
 
 		int userCateg;
@@ -403,6 +525,7 @@ public:
 		return -1;
 	}
 
+	static string FoundPersonByLogin(string login, vector<User> users);
 	static bool CheckPass(string str)
 	{
 		if (str.size() < 8)
@@ -449,14 +572,14 @@ public:
 	bool* fullAnsw;
 	Category* categ;
 	CurrentTest* currTest;
-	User* who;
+	string whoLog;
 	int rightRes;
 	double rightInProc;
 	int size;
 
 public:
-	Statistic(User* who = nullptr, Category* categ = nullptr, CurrentTest* currTest = nullptr, bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0, int size = 0)
-		:who(who), categ(categ), currTest(currTest), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc), size(size)
+	Statistic(Category* categ = nullptr, CurrentTest* currTest = nullptr, string whoLog = "", bool* fullAnsw = nullptr, int rightRes = 0, double rightInProc = 0, int size = 0)
+		: whoLog(whoLog), categ(categ), currTest(currTest), fullAnsw(fullAnsw), rightRes(rightRes), rightInProc(rightInProc), size(size)
 	{
 	}
 
@@ -478,8 +601,6 @@ public:
 	{
 		cout << "Test name: " << currTest->testName << endl;
 	}
-
-	void ShowWho();
 
 	friend class User;
 };
@@ -651,7 +772,7 @@ public:
 
 	void GoTest(Test& tests)
 	{
-		if (!Shows::ShowCategories(tests))
+		if (!Shows::ShowAllCategories(tests))
 			return;
 
 		string categoryName;
@@ -699,7 +820,7 @@ public:
 			{
 				i.ShowQuestAnsw();
 
-				cout << "Input your answer: ";
+				cout << "Input your answer digit or number: ";
 				cin >> userAnswer;
 			} while (!Founders::CheckAndConvertAnswer(userAnswer));
 
@@ -715,7 +836,7 @@ public:
 		int nRight = Founders::CountRightAnsw(stat, size);
 		double rightInProc = (double)(nRight * 100) / size;
 
-		Statistic fullStat{ this, cat, currTest, stat, nRight, rightInProc, size };
+		Statistic fullStat{ cat, currTest, this->login, stat, nRight, rightInProc, size };
 
 		cout << "RESULTS: \n";
 
@@ -780,15 +901,16 @@ public:
 			return false;
 		}
 
-		Statistic tmp{ &User(), &Category(), &CurrentTest() };
+		Statistic tmp{ &Category(), &CurrentTest() };
 
 		bool isOne = false;
 
 		while (file.peek() != ifstream::traits_type::eof())
 		{
 			file >> tmp;
-			if (tmp.who->fullName == this->fullName)
+			if (tmp.whoLog == this->login)
 			{
+				cout << "-----------\n";
 				isOne = true;
 				tmp.ShowCategTitle();
 				tmp.ShowTestTitle();
@@ -822,7 +944,7 @@ public:
 			return;
 		}
 
-		Statistic tmp{ &User(), &Category(), &CurrentTest() };
+		Statistic tmp{ &Category(), &CurrentTest() };
 
 		bool isOne = false;
 		bool isFirst = false;
@@ -831,12 +953,12 @@ public:
 		{
 			file >> tmp;
 
-			if (tmp.who->fullName == this->fullName && tmp.categ->catName == cat->catName)
+			if (tmp.whoLog == this->login && tmp.categ->catName == cat->catName)
 			{
+				cout << "-----------\n";
 				isOne = true;
 				tmp.ShowTestTitle();
 				tmp.ShowStat();
-				cout << endl;
 			}
 		}
 
@@ -856,7 +978,7 @@ public:
 			return;
 		}
 
-		Statistic tmp{ &User(), &Category(), &CurrentTest() };
+		Statistic tmp{ &Category(), &CurrentTest() };
 
 		bool isOne = false;
 
@@ -864,11 +986,11 @@ public:
 		{
 			file >> tmp;
 
-			if (tmp.who->fullName == this->fullName && tmp.currTest->testName == cat->testName)
+			if (tmp.whoLog == this->login && tmp.currTest->testName == cat->testName)
 			{
+				cout << "-----------\n";
 				isOne = true;
 				tmp.ShowStat();
-				cout << endl;
 			}
 		}
 
@@ -888,7 +1010,7 @@ public:
 			return;
 		}
 
-		Statistic tmp{ &User(), &Category(), &CurrentTest() };
+		Statistic tmp{ &Category(), &CurrentTest() };
 
 		bool isOne = false;
 
@@ -897,12 +1019,11 @@ public:
 			file >> tmp;
 			if (tmp.currTest->testName == cat->testName)
 			{
+				cout << "-----------\n";
 				isOne = true;
-				tmp.ShowWho();
 				tmp.ShowCategTitle();
 				tmp.ShowTestTitle();
 				tmp.ShowStat();
-				cout << endl;
 			}
 		}
 
@@ -989,7 +1110,6 @@ public:
 					break;
 				}
 
-				//SeeOlderByCurrPersonByCateg(&tests.categories[nChoose]);
 				SeeOlderByCurrPersonByCateg(choosePtr);
 
 				break;
@@ -1006,37 +1126,40 @@ public:
 	}
 };
 
-/*
-	+bool* fullAnsw;
-	+Category* categ;
-	CurrentTest* currTest;
-	+User* who;
-	+int rightRes;
-	+double rightInProc;
-	+int size;
-*/
+string Founders::FoundPersonByLogin(string login, vector<User> users)
+{
+	for (auto& i : users)
+		if (i.GetLogin() == login)
+			return i.GetFullName();
+
+	return string("");
+}
 
 ifstream& operator>>(ifstream& in, Statistic& stat)
 {
-	in >> *stat.who;
+	string catTitle, currTitle, who;
+	getline(in, stat.whoLog);
 	in >> stat.rightRes;
 	in >> stat.rightInProc;
 	in >> stat.size;
-	in >> *stat.categ;
-	in >> *stat.currTest;
+	getline(in, catTitle);
+	getline(in, currTitle);
+
+	if (catTitle[0] == ' ')
+		catTitle.erase(0, 1);
+	if (currTitle[0] == ' ')
+		currTitle.erase(0, 1);
+
+	stat.categ->SetName(catTitle);
+	stat.currTest->SetName(currTitle);
 
 	return in;
 }
 ofstream& operator<<(ofstream& out, const Statistic& stat)
 {
-	out << *(stat.who) << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categ->GetName() << endl << stat.currTest->testName << endl;
+	out << stat.whoLog << endl << stat.rightRes << " " << stat.rightInProc << " " << stat.size << " " << stat.categ->GetName() << endl << stat.currTest->testName << endl;
 
 	return out;
-}
-
-void Statistic::ShowWho()
-{
-	cout << "Who: " << who->GetFullName() << endl;
 }
 
 class Admin
@@ -1545,41 +1668,46 @@ public:
 			cout << "|1. Full name |\n";
 			cout << "|2. Address   |\n";
 			cout << "|3. Number    |\n";
+			cout << "|0. Exit      |\n";
 			cout << "===============\n";
-			cout << "Input what you want to edit: ";
 			cin >> choose;
 
-			if (choose < 1 || choose > 3)
-				cout << "Input right value (1-3)";
+			switch (choose)
+			{
+			case 1:
+				cout << "Input new user full name: ";
+				cin.ignore(cin.rdbuf()->in_avail());
+				getline(cin, tmp);
+				user.SetFullName(tmp);
+				cout << "Full name are succesfullt edit\n";
+				break;
 
-		} while (choose < 1 || choose > 3);
+			case 2:
+				cout << "Input new user address: ";
+				cin.ignore(cin.rdbuf()->in_avail());
+				getline(cin, tmp);
+				user.SetAddress(tmp);
+				cout << "Address are succesfullt edit\n";
+				break;
 
-		switch (choose)
-		{
-		case 1:
-			cout << "Input new user full name: ";
-			cin.ignore(cin.rdbuf()->in_avail());
-			getline(cin, tmp);
-			user.SetFullName(tmp);
-			break;
+			case 3:
+				cout << "Input new user number: ";
+				cin.ignore(cin.rdbuf()->in_avail());
+				getline(cin, tmp);
+				user.SetNumber(tmp);
+				cout << "Number are succesfullt edit\n";
+				break;
 
-		case 2:
-			cout << "Input new user address: ";
-			cin.ignore(cin.rdbuf()->in_avail());
-			getline(cin, tmp);
-			user.SetAddress(tmp);
-			break;
+			case 0:
+				return;
 
-		case 3:
-			cout << "Input new user number: ";
-			cin.ignore(cin.rdbuf()->in_avail());
-			getline(cin, tmp);
-			user.SetNumber(tmp);
-			break;
+			default:
+				cout << "Input right digit (1-3)\n";
+				break;
+			}
+			system("pause");
 
-		default:
-			break;
-		}
+		} while (choose != 0);
 	}
 
 	//Questions
@@ -1601,8 +1729,7 @@ public:
 			nCategor = tests.categories.size() - 1;
 		}
 
-		//
-		if (!Shows::ShowCurrentCategorie(&tests.categories[nCategor]))
+		if (!Shows::ShowTestsInCurrentCategorie(&tests.categories[nCategor]))
 			cout << "No one tests in this categ yet\n";
 
 		string test;
@@ -1662,6 +1789,12 @@ public:
 		getline(cin, test);
 
 		CurrentTest* testPtr = Founders::GetTestByName(test, catName);
+
+		if (testPtr == nullptr)
+		{
+			cout << "Invalid test title\n";
+			return;
+		}
 
 		if (!Shows::ShowCurrentTest(testPtr))
 		{
@@ -1796,14 +1929,6 @@ public:
 			}
 		} while (choice < 1 || choice > 3);
 	}
-	//void DelQuestAnsw()
-	//{
-	//	if (Founders::GetCategIndByName(Founders::Founders::GetCategoriesName()) == -1)
-	//	{
-	//		cout << "Incorrect category name\n";
-	//		return;
-	//	}
-	//}
 
 	//Test
 	void AddNewTest()
@@ -2007,14 +2132,14 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, fullName);
 
-		Statistic tmp(&User(), &Category(), &CurrentTest());
+		Statistic tmp(&Category(), &CurrentTest());
 		bool isOne = false;
 
 		while (!file.eof())
 		{
 			file >> tmp;
 
-			if (tmp.who->GetFullName() == fullName)
+			if (Founders::FoundPersonByLogin(tmp.whoLog, users) == fullName)
 			{
 				tmp.ShowCategTitle();
 				tmp.ShowTestTitle();
@@ -2043,12 +2168,14 @@ public:
 			return;
 		}
 
+		Shows::ShowAllCategories(tests);
+
 		string category;
 		cout << "Input category what you want to see: ";
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, category);
 
-		Statistic tmp(&User(), &Category(), &CurrentTest());
+		Statistic tmp(&Category(), &CurrentTest());
 		bool isOne = false;
 
 		while (!file.eof())
@@ -2057,7 +2184,7 @@ public:
 
 			if (tmp.categ->catName == category)
 			{
-				tmp.ShowWho();
+				cout << "Who: " << Founders::FoundPersonByLogin(tmp.whoLog, users) << endl;
 				tmp.ShowTestTitle();
 				tmp.ShowStat();
 				cout << endl;
@@ -2084,6 +2211,8 @@ public:
 			return;
 		}
 
+		Shows::ShowAllCategories(tests);
+
 		string category;
 		cout << "Input category that have your need test (this is not all categories, you can know more): ";
 		cin.ignore(cin.rdbuf()->in_avail());
@@ -2098,7 +2227,7 @@ public:
 		cin.ignore(cin.rdbuf()->in_avail());
 		getline(cin, test);
 
-		Statistic tmp(&User(), &Category(), &CurrentTest());
+		Statistic tmp(&Category(), &CurrentTest());
 		bool isOne = false;
 
 		cout << "Test: " << category << endl;
@@ -2108,7 +2237,7 @@ public:
 
 			if (tmp.currTest->testName == test && tmp.categ->GetName() == category)
 			{
-				tmp.ShowWho();
+				cout << "Who: " << Founders::FoundPersonByLogin(tmp.whoLog, users);
 				tmp.ShowStat();
 				cout << endl;
 				isOne = true;
@@ -2146,6 +2275,24 @@ public:
 
 		for (auto& i : users)
 			file << i;
+	}
+	void UpLoadAllTest()
+	{
+		ifstream file("Questions.txt");
+
+		if (!file.good())
+			return;
+
+		file >> tests;
+	}
+	void LoadAllTest()
+	{
+		ofstream file("Questions.txt");
+
+		if (!file.good())
+			return;
+
+		file << tests;
 	}
 
 	/*void GoTest()
@@ -2470,32 +2617,27 @@ public:
 		do
 		{
 			system("cls");
-			cout << "=========================\n";
-			cout << "|1. Show all tests      |\n";
-			cout << "|2. Add test            |\n";
-			cout << "|3. Delete test         |\n";
-			cout << "|4. Rename test         |\n";
-			cout << "|0. Go back             |\n";
-			cout << "=========================\n";
+			cout << "===================================\n";
+			cout << "|1. Show stat by current person   |\n";
+			cout << "|2. Show stat by current category |\n";
+			cout << "|3. Show stat by current test     |\n";
+			cout << "|0. Go back                       |\n";
+			cout << "===================================\n";
 			cout << "Input your choice: ";
 			cin >> choice;
 
 			switch (choice)
 			{
 			case 1:
-				Shows::ShowAllCategories(tests);
+				ShowStatisticByCurrentPeople();
 				break;
 
 			case 2:
-				AddNewCategorie();
+				ShowStatisticByCurrentCategory();
 				break;
 
 			case 3:
-				DeleteCateg();
-				break;
-
-			case 4:
-				RenameCateg();
+				ShowStatisticByCurrentTest();
 				break;
 
 			case 0:
@@ -2543,6 +2685,11 @@ public:
 				break;
 
 			case 3:
+				LoadAllTest();
+				break;
+
+			case 4:
+				UpLoadAllTest();
 				break;
 
 			case 5:
@@ -2571,6 +2718,7 @@ public:
 
 			case 0:
 				return;
+
 			default:
 				cout << "Input right digit (0-6)\n";
 				break;
@@ -2633,6 +2781,8 @@ void EntryMenu()
 
 	if (admin.ReadAutoUserUpLoad())
 		admin.UpLoadAllUsers();
+	if (admin.ReadAutoQuestUpLoad())
+		admin.UpLoadAllTest();
 
 	int choice;
 	do
@@ -2692,6 +2842,8 @@ void EntryMenu()
 
 	if (admin.ReadAutoUserLoad())
 		admin.LoadAllUsers();
+	if (admin.ReadAutoQuestLoad())
+		admin.LoadAllTest();
 }
 
 int main()
@@ -2719,3 +2871,4 @@ int main()
 
 	return 0;
 }
+
