@@ -4,10 +4,6 @@
 #include <vector>
 #include <fstream>
 #include <ctime>
-#include <iomanip>
-#include <algorithm>
-
-#include <conio.h>
 
 using namespace std;
 #define CLEAR cin.ignore(cin.rdbuf()->in_avail())

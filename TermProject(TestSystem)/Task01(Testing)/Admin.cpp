@@ -432,7 +432,7 @@ void Admin::AddUser()
 	do
 	{
 		system("cls");
-	cout << "    REGISTERING\n";
+		cout << "    REGISTERING\n";
 		cout << "Input login: ";
 		CLEAR;
 		getline(cin, login);
@@ -489,7 +489,25 @@ void Admin::DeleteUser()
 
 	cin >> index;
 
+	User* user = GetUserByIndex(index);
+
+	if (user == nullptr)
+	{
+		cout << "Invalid index\n";
+		return;
+	}
+
+	remove(string("Saves/Pause/" + user->GetLogin() + ".txt").c_str());
+
 	users.erase(users.begin() + --index);
+}
+
+User* Admin::GetUserByIndex(int index)
+{
+	if (index < 0 || index > users.size())
+		return nullptr;
+
+	return &users[--index];
 }
 
 void Admin::UserEdit()
@@ -502,20 +520,41 @@ void Admin::UserEdit()
 
 	cin >> index;
 
-	UserEditHelper(users[--index]);
+	User* user = GetUserByIndex(index);
+
+	if (user == nullptr)
+	{
+		cout << "Invalid index\n";
+		return;
+	}
+
+
+	if (UserEditHelper(users[--index]))
+	{
+		cout << "Warning! You are switch login, file with pause will be delete, statisitc will be fallen\n";
+		remove(string("Saves/Pause/" + user->GetLogin() + ".txt").c_str());
+
+	}
 }
-void Admin::UserEditHelper(User& user)
+bool Admin::UserEditHelper(User& user)
 {
+	bool isSwitchLogin = false;
+
 	string tmp;
 	int choose;
 	do
 	{
+		system("cls");
+		cout << "USER EDIT MENU\n";
 		cout << "===============\n";
 		cout << "|1. Full name |\n";
 		cout << "|2. Address   |\n";
 		cout << "|3. Number    |\n";
+		cout << "|4. Login     |\n";
+		cout << "|5. Passowrd  |\n";
 		cout << "|0. Exit      |\n";
 		cout << "===============\n";
+		cout << "Input what you want to switch: ";
 		cin >> choose;
 
 		switch (choose)
@@ -524,28 +563,62 @@ void Admin::UserEditHelper(User& user)
 			cout << "Input new user full name: ";
 			CLEAR;
 			getline(cin, tmp);
-			user.SetFullName(tmp);
-			cout << "Full name are succesfullt edit\n";
+			if (user.SetFullName(tmp))
+				cout << "Full name are succesfully edit\n";
+
+			else
+				cout << "Some error\n";
 			break;
 
 		case 2:
 			cout << "Input new user address: ";
 			CLEAR;
 			getline(cin, tmp);
-			user.SetAddress(tmp);
-			cout << "Address are succesfullt edit\n";
+			if (user.SetAddress(tmp))
+				cout << "Address are succesfully edit\n";
+
+			else
+				cout << "Some error\n";
 			break;
 
 		case 3:
 			cout << "Input new user number: ";
 			CLEAR;
 			getline(cin, tmp);
-			user.SetNumber(tmp);
-			cout << "Number are succesfullt edit\n";
+			if (user.SetNumber(tmp))
+				cout << "Number are succesfully edit\n";
+
+			else
+				cout << "Some error\n";
+			break;
+
+		case 4:
+			cout << "Input new user login: ";
+			CLEAR;
+			getline(cin, tmp);
+			if (user.SetLogin(tmp))
+				cout << "Login are succesfully edit\n";
+
+			else
+				cout << "Some error\n";
+
+			isSwitchLogin = true;
+
+			break;
+
+		case 5:
+			CLEAR;
+			tmp = GetPassword("Input new user password: ");
+			if (user.SetPass(tmp))
+				cout << "Password are succesfullt edit\n";
+
+			else
+				cout << "Some error\n";
+
 			break;
 
 		case 0:
-			return;
+			return isSwitchLogin;
 
 		default:
 			cout << "Input right digit (1-3)\n";
@@ -554,6 +627,8 @@ void Admin::UserEditHelper(User& user)
 		system("pause");
 
 	} while (choose != 0);
+
+	return isSwitchLogin;
 }
 
 //Questions
@@ -734,6 +809,8 @@ void Admin::EditHelper(QuestAnsw& quest)
 
 	do
 	{
+		system("cls");
+		cout << " EDIT QUESTION MENU\n";
 		cout << "=====================\n";
 		cout << "|1. Edit question   |\n";
 		cout << "|2. Edit answers    |\n";
@@ -755,6 +832,8 @@ void Admin::EditHelper(QuestAnsw& quest)
 			cout << "And now this is a: " << newQuest << endl;
 
 			quest.question = newQuest;
+
+			cout << "Question answer are succesfully edit\n";
 			break;
 		}
 
@@ -774,6 +853,8 @@ void Admin::EditHelper(QuestAnsw& quest)
 			getline(cin, newQuest);
 
 			quest.answers[index] = newQuest;
+
+			cout << "Answer are succesfully edit\n";
 			break;
 		}
 
@@ -788,6 +869,8 @@ void Admin::EditHelper(QuestAnsw& quest)
 			newRight--;
 
 			quest.indexCorrect = newRight;
+
+			cout << "Right answer are succesfully edit\n";
 			break;
 		}
 		default:
@@ -1113,9 +1196,19 @@ void Admin::ShowStatisticByCurrentCategory()
 	Shows::ShowAllCategories(tests);
 
 	string category;
-	cout << "Input category what you want to see: ";
+	cout << "Input category or index what you want to see (that's no all categoies, you can know more): ";
 	CLEAR;
 	getline(cin, category);
+
+	Category* catPtr = Founders::GetCategoryByName(category, tests);
+
+	string categoryReady;
+
+	if (catPtr == nullptr)
+		categoryReady = category;
+
+	else
+		categoryReady = catPtr->GetName();
 
 	Statistic tmp{};
 	bool isOne = false;
@@ -1124,7 +1217,7 @@ void Admin::ShowStatisticByCurrentCategory()
 	{
 		file >> tmp;
 
-		if (tmp.categTitle == category)
+		if (tmp.categTitle == categoryReady)
 		{
 			cout << "Who: " << Founders::FoundPersonByLogin(tmp.whoLog, users) << endl;
 			tmp.ShowTestTitle();
@@ -1156,18 +1249,36 @@ void Admin::ShowStatisticByCurrentTest()
 	Shows::ShowAllCategories(tests);
 
 	string category;
-	cout << "Input category that have your need test (this is not all categories, you can know more): ";
+	cout << "Input category or index that have your need test (this is not all categories, you can know more): ";
 	CLEAR;
 	getline(cin, category);
 
 	Category* catPtr = Founders::GetCategoryByName(category, tests);
 
+	string readyCat;
+
+	if (catPtr == nullptr)
+		readyCat = category;
+
+	else
+		readyCat = catPtr->GetName();
+
 	Shows::ShowTestsInCurrentCategorie(catPtr);
 
 	string test;
-	cout << "Input test that you want to see (this is not all tests, you can know more): ";
+	cout << "Input test or index that you want to see (this is not all tests, you can know more): ";
 	CLEAR;
 	getline(cin, test);
+
+	CurrentTest* testPtr = Founders::GetTestByName(test, catPtr);
+
+	string readyTest;
+
+	if (testPtr == nullptr)
+		readyTest = test;
+
+	else
+		readyTest = testPtr->GetName();
 
 	Statistic tmp{};
 	bool isOne = false;
@@ -1177,7 +1288,7 @@ void Admin::ShowStatisticByCurrentTest()
 	{
 		file >> tmp;
 
-		if (tmp.currTestTitle == test && tmp.categTitle == category)
+		if (tmp.currTestTitle == readyTest && tmp.categTitle == readyCat)
 		{
 			cout << "Who: " << Founders::FoundPersonByLogin(tmp.whoLog, users);
 			tmp.ShowStat();
@@ -1187,7 +1298,7 @@ void Admin::ShowStatisticByCurrentTest()
 	}
 
 	if (!isOne)
-		cout << "No one person don't goind this test\n";
+		cout << "No one person don't goind this test or incorrect test title\n";
 
 }
 

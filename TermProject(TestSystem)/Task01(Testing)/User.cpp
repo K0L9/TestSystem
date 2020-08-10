@@ -78,6 +78,49 @@ string User::GetPass() const
 }
 
 //RunTest
+bool User::IsPause()
+{
+	ifstream filePause("Saves/Pause/" + this->login + ".txt");
+
+	if (!filePause.good())
+		return false;
+
+	if (filePause.peek() == ifstream::traits_type::eof())
+		return false;
+
+	return true;
+
+	filePause.close();
+}
+void User::LoadTest(Test& tests)
+{
+	ifstream filePause("Saves/Pause/" + this->login + ".txt");
+
+	if (!filePause.good())
+	{
+		cout << "Error with file\n";
+		return;
+	}
+	string cat, test;
+	int ind;
+
+	getline(filePause, test);
+	getline(filePause, cat);
+	filePause >> ind;
+
+
+	Category* catPtr = Founders::GetCategoryByName(cat, tests);
+	CurrentTest* testPtr = Founders::GetTestByName(test, catPtr);
+
+	bool* stat = new bool[testPtr->QA.size()];
+	for (size_t i = 0; i < ind; i++)
+		filePause >> stat[i];
+
+	filePause.close();
+
+	GoTestHelper(testPtr, catPtr, ind, stat);
+
+}
 void User::GoTest(Test& tests)
 {
 	cout << "   TEST RUNNING\n";
@@ -114,33 +157,59 @@ void User::GoTest(Test& tests)
 		return;
 	}
 
+	bool* stat = new bool[currTest->QA.size()];
+	GoTestHelper(currTest, cat, 0, stat);
+}
+void User::GoTestHelper(CurrentTest* currTest, Category* cat, int currTestInd, bool* stat)
+{
 	bool isTrue = false;
 	char userAnswer;
 	int size = currTest->QA.size();
-	bool* stat = new bool[size];
 
-	int counter = 0;
-	bool isTrueAnswer = false;
-	for (auto& i : currTest->QA)
+	int counter = currTestInd;
+	bool isTrueAnswer = false, isPause = false;
+	for (int i = currTestInd; i < size; i++)
 	{
-		system("cls");
-		cout << "Answer #" << counter + 1 << " / " << size << endl;
 
 		do
 		{
-			i.ShowQuestAnsw();
+			system("cls");
+			cout << "Answer #" << counter + 1 << " / " << size << endl;
+			currTest->QA[i].ShowQuestAnsw();
 
-			cout << "Input your answer digit or number: ";
+			cout << "Input your answer digit or number (Input CTRL + Z  or  P to stay on pause): ";
 			cin >> userAnswer;
+
+			if (userAnswer == 'P' || !cin.good())
+			{
+				isPause = true;
+				cin.clear();
+				break;
+			}
 
 			isTrueAnswer = Founders::CheckAndConvertAnswer(userAnswer);
 
 			if (!isTrueAnswer)
-				cout << "Input right answer index or digit (1-4; a-d; A-D)\n";
+			{
+				cout << "Input right answer index or digit (1-4; a-d; A-D; P; CTRL + Z)\n";
+				system("pause");
+			}
 
 		} while (!isTrueAnswer);
 
-		if (i.CheckAnsw(userAnswer))
+		if (isPause)
+		{
+			ofstream filePause("Saves/Pause/" + this->login + ".txt");
+
+			filePause << currTest->GetName() << endl << cat->GetName() << endl << i << endl;
+			for (size_t j = 0; j < counter; j++)
+				filePause << stat[j] << " ";
+			filePause << endl;
+			filePause.close();
+			return;
+		}
+
+		if (currTest->QA[i].CheckAnsw(userAnswer))
 			stat[counter] = true;
 
 		else
@@ -168,6 +237,8 @@ void User::GoTest(Test& tests)
 		return;
 	}
 
+	remove(string("Saves/Pause/" + this->login + ".txt").c_str());
+
 	int choice;
 	do
 	{
@@ -185,14 +256,17 @@ void User::GoTest(Test& tests)
 		{
 		case 1:
 			SeeTrueFalse(stat, size, currTest);
+			system("pause");
 			break;
 
 		case 2:
 			SeeResultsByOtherPeople(currTest);
+			system("pause");
 			break;
 
 		case 3:
 			SeeOlderByCurrPersonByTest(currTest);
+			system("pause");
 			break;
 
 		case 0:
@@ -201,9 +275,9 @@ void User::GoTest(Test& tests)
 
 		default:
 			cout << "Input right value\n";
+			system("pause");
 			break;
 		}
-		system("pause");
 	} while (choice != 0);
 
 }
@@ -363,9 +437,102 @@ void User::SeeResultsByOtherPeople(const CurrentTest* const cat)
 //Menu
 void User::MainUserMenu(Test& tests)
 {
-	int choice;
-	do
+	if (IsPause())
 	{
+		int choice;
+		system("cls");
+		cout << "            USER MENU\n";
+		cout << "=====================================\n";
+		cout << "|1. Going old test from pause       |\n";
+		cout << "|2. Start new test                  |\n";
+		cout << "|3. Show full person stat           |\n";
+		cout << "|4. Show statistic by curent test   |\n";
+		cout << "|5. Show statistic by curent categ. |\n";
+		cout << "|0. Log Out                         |\n";
+		cout << "=====================================\n";
+		cout << "Input your choice: ";
+		cin >> choice;
+
+		switch (choice)
+		{
+		case 1:
+			system("cls");
+			LoadTest(tests);
+			break;
+
+		case 2:
+			system("cls");
+			GoTest(tests);
+			break;
+
+		case 3:
+			system("cls");
+			ShowPersonStat();
+			break;
+
+		case 4:
+		{
+			system("cls");
+			Shows::ShowAllCategories(tests);
+
+			string cat;
+			cout << "Input category (that's no all category, you can know more categories): ";
+			CLEAR;
+			getline(cin, cat);
+			Category* catPtr = Founders::GetCategoryByName(cat, tests);
+
+			if (catPtr == nullptr)
+			{
+				cout << "Invalid category name\n";
+				break;
+			}
+
+			Shows::ShowTestsInCurrentCategorie(catPtr);
+
+			string test;
+			cout << "Input test (this is no all test, you can know more tests): ";
+			CLEAR;
+			getline(cin, test);
+
+			CurrentTest* testPtr = Founders::GetTestByName(test, catPtr);
+
+			SeeOlderByCurrPersonByTest(testPtr);
+
+			break;
+		}
+
+		case 5:
+		{
+			system("cls");
+			Shows::ShowAllCategories(tests);
+
+			string choose;
+			cout << "Input category (that's no all category, you can know more categories): ";
+			CLEAR;
+			getline(cin, choose);
+			Category* choosePtr = Founders::GetCategoryByName(choose, tests);
+
+			if (choosePtr == nullptr)
+			{
+				cout << "Invalid category name\n";
+				break;
+			}
+
+			SeeOlderByCurrPersonByCateg(choosePtr);
+
+			break;
+		}
+		case 0:
+			return;
+		default:
+			cout << "Input right choice(0-4)\n";
+			break;
+		}
+		MainUserMenu(tests);
+	}
+	else
+	{
+		int choice;
 		system("cls");
 		cout << "            USER MENU\n";
 		cout << "=====================================\n";
@@ -448,8 +615,9 @@ void User::MainUserMenu(Test& tests)
 			cout << "Input right choice(0-4)\n";
 			break;
 		}
+		MainUserMenu(tests);
 		system("pause");
-	} while (choice != 0);
+	}
 
 }
 

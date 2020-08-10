@@ -250,6 +250,9 @@ int Founders::GetQuestIndByQuest(const CurrentTest* test, string quest)
 
 CurrentTest* Founders::GetTestByName(string testName, Category* const cat)
 {
+	if (cat == nullptr)
+		return nullptr;
+
 	if (isdigit(testName[0]))
 	{
 		int index = atoi(testName.c_str()) - 1;
@@ -349,5 +352,4 @@ bool Founders::CheckLogin(string str)
 		if (!(str[i] >= 'a' && str[i] <= 'z' || str[i] >= 'A' && str[i] <= 'Z' || str[i] >= '0' && str[i] <= '9' || str[i] == '_'))
 			throw logic_error("Your login can have only digits, letters and _");
 }
-
 

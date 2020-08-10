@@ -39,7 +39,10 @@ public:
 
 	User operator=(const User& other);
 
+	bool IsPause();
+	void LoadTest(Test& tests);
 	void GoTest(Test& tests);
+	void GoTestHelper(CurrentTest* currTest, Category* cat, int currTestInd, bool* stat);
 
 	bool ShowPersonStat();
 	void SeeTrueFalse(const bool* const answers, int answerSize, const CurrentTest* const test);
@@ -49,3 +52,4 @@ public:
 
 	void MainUserMenu(Test& tests);
 };
+

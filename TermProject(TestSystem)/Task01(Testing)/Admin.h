@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iomanip>
 #include "User.h";
 
 class Admin
@@ -44,7 +44,9 @@ public:
 
 	void DeleteUser();
 	void UserEdit();
-	void UserEditHelper(User& user);
+	bool UserEditHelper(User& user);
+
+	User* GetUserByIndex(int index);
 
 	//Questions
 	void AddQuestAnsw();
